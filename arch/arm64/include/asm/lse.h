@@ -12,15 +12,6 @@
 #include <asm/alternative.h>
 #include <asm/cpucaps.h>
 
-#ifdef __ASSEMBLER__
-
-.arch_extension	lse
-
-.macro alt_lse, llsc, lse
-	\lse
-.endm
-
-#else	/* __ASSEMBLER__ */
 
 /* Move the ll/sc atomics out-of-line */
 #define __LL_SC_INLINE		notrace
@@ -34,16 +25,7 @@
 /* In-line patching at runtime */
 #define ARM64_LSE_ATOMIC_INSN(llsc, lse)	__LSE_PREAMBLE lse
 
-#endif	/* __ASSEMBLER__ */
 #else	/* CONFIG_AS_LSE && CONFIG_ARM64_LSE_ATOMICS */
-
-#ifdef __ASSEMBLER__
-
-.macro alt_lse, llsc, lse
-	\llsc
-.endm
-
-#else	/* __ASSEMBLER__ */
 
 #define __LL_SC_INLINE		static inline
 #define __LL_SC_PREFIX(x)	x
@@ -51,6 +33,5 @@
 
 #define ARM64_LSE_ATOMIC_INSN(llsc, lse)	llsc
 
-#endif	/* __ASSEMBLER__ */
 #endif	/* CONFIG_AS_LSE && CONFIG_ARM64_LSE_ATOMICS */
 #endif	/* __ASM_LSE_H */
