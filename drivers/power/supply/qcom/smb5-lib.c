@@ -2302,7 +2302,6 @@ int smblib_get_prop_batt_status(struct smb_charger *chg,
 			break;
 		default:
 #ifdef CONFIG_MACH_XIAOMI_MOJITO
-			pr_err("[%s] usb online=%d real_charger_type=%d\n", __func__, usb_online, chg->real_charger_type);
 			if ((chg->real_charger_type == POWER_SUPPLY_TYPE_USB_PD) &&
 			   ((chg->typec_mode >= POWER_SUPPLY_TYPEC_SOURCE_DEFAULT) &&
 			   	(chg->typec_mode <= POWER_SUPPLY_TYPEC_SOURCE_HIGH)))
