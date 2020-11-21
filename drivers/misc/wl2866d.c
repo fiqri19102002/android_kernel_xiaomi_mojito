@@ -797,7 +797,6 @@ static int wl2866d_suspend(struct device *dev)
 	struct wl2866d_chip *chip = i2c_get_clientdata(client);
 	int ret = 0;
 
-	pr_err("%s\n", __func__);
 	ret = wl2866d_i2c_write(chip, wl2866d_on_config[VOL_DISABLE].reg, wl2866d_on_config[VOL_DISABLE].value);
 	if (ret < 0)
 		pr_err("wl2866d close voltage failed\n");
@@ -811,7 +810,6 @@ static int wl2866d_resume(struct device *dev)
 	struct i2c_client *client = to_i2c_client(dev);
 	struct wl2866d_chip *chip = i2c_get_clientdata(client);
 
-	pr_err("%s\n", __func__);
 	wl2866d_enable_power(chip);
 	gpio_direction_output(chip->en_gpio, 0);
 
