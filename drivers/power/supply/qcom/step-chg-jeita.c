@@ -871,9 +871,6 @@ static int handle_jeita(struct step_chg_info *chip)
 		goto set_jeita_fv;
 
 #ifdef CONFIG_MACH_XIAOMI_MOJITO
-	pr_err("%s = %d FCC = %duA FV = %duV\n",
-		chip->jeita_fcc_config->param.prop_name, batt_temp, fcc_ua, fv_uv);
-
 	/* set and clear fast charge mode when soft jeita trigger and clear */
 	rc = power_supply_get_property(chip->usb_psy,
 			POWER_SUPPLY_PROP_PD_AUTHENTICATION, &pval);
@@ -900,7 +897,6 @@ static int handle_jeita(struct step_chg_info *chip)
 	if ((pd_authen_result == 1) || (usb_charger_type == POWER_SUPPLY_TYPE_USB_HVDCP_3P5) ||
 	    (hvdcp3_charger_type == STEP_HVDCP3_CLASSB_27W)) {
 		if ((temp >= BATT_WARM_THRESHOLD || temp <= BATT_COOL_THRESHOLD) && !fast_mode_dis) {
-			pr_err("temp:%d disable fastcharge mode\n", temp);
 			pval.intval = false;
 			rc = power_supply_set_property(chip->usb_psy,
 					POWER_SUPPLY_PROP_FASTCHARGE_MODE, &pval);
@@ -911,7 +907,6 @@ static int handle_jeita(struct step_chg_info *chip)
 			fast_mode_dis = true;
 		} else if ((temp < BATT_WARM_THRESHOLD - (chip->jeita_fv_config->param.hysteresis) * 3) &&
 			   (temp > BATT_COOL_THRESHOLD + (chip->jeita_fv_config->param.hysteresis) * 3) && fast_mode_dis) {
-			pr_err("temp:%d enable fastcharge mode\n", temp);
 			pval.intval = true;
 			rc = power_supply_set_property(chip->usb_psy,
 					POWER_SUPPLY_PROP_FASTCHARGE_MODE, &pval);
