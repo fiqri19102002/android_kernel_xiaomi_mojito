@@ -32,18 +32,10 @@
 #include <linux/regmap.h>
 #include <linux/random.h>
 
-#ifdef CONFIG_MACH_XIAOMI_MOJITO
-#define ds_info	pr_err
-#define ds_dbg	pr_err
-#define ds_err	pr_err
-#define ds_log	pr_err
-#else
 #define ds_info	pr_debug
 #define ds_dbg	pr_debug
 #define ds_err	pr_err
 #define ds_log	pr_debug
-#endif
-
 
 struct ds28e16_data {
 	struct platform_device *pdev;
@@ -1169,7 +1161,7 @@ static int verify_get_property(struct power_supply *psy, enum power_supply_prope
 			return -EAGAIN;
 		break;
 	default:
-		ds_err("unsupported property %d\n", psp);
+		ds_dbg("unsupported property %d\n", psp);
 		return -ENODATA;
 	}
 
@@ -1191,7 +1183,7 @@ static int verify_set_property(struct power_supply *psy,
 		auth_BDCONST   = val->intval;
 		break;
 	default:
-		ds_err("unsupported property %d\n", prop);
+		ds_dbg("unsupported property %d\n", prop);
 		return -ENODATA;
 	}
 
