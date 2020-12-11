@@ -2352,7 +2352,6 @@ int smblib_get_prop_batt_status(struct smb_charger *chg,
 		         (POWER_SUPPLY_HEALTH_OVERHEAT != batt_health) && 
 		         (POWER_SUPPLY_HEALTH_OVERVOLTAGE != batt_health)) {
 			val->intval = POWER_SUPPLY_STATUS_CHARGING;
-			pr_info("vbus_now = %d, report charging\n", vbus_now);
 		} else {
 			val->intval = POWER_SUPPLY_STATUS_NOT_CHARGING;
 		}
@@ -2415,7 +2414,6 @@ int smblib_get_prop_batt_status(struct smb_charger *chg,
 		} else if ((usb_online || vbus_now > 4000000) && (batt_temp > -100) && (batt_temp < 580) &&
 			(POWER_SUPPLY_HEALTH_OVERHEAT != batt_health) && (POWER_SUPPLY_HEALTH_OVERVOLTAGE != batt_health)) {
 			val->intval = POWER_SUPPLY_STATUS_CHARGING;
-			pr_info("vbus_now is %d, report charging\n", vbus_now);
 		} else {
 			val->intval = POWER_SUPPLY_STATUS_NOT_CHARGING;
 		}
@@ -7917,8 +7915,6 @@ irqreturn_t typec_state_change_irq_handler(int irq, void *data)
 	chg->typec_mode = typec_mode;
 
 #ifdef CONFIG_REVERSE_CHARGE
-	pr_err("longcheer:%s,reverse_charge_mode=%d,typec_mode=%d\n",
-	        __func__, chg->reverse_charge_mode,chg->typec_mode);
 	if (chg->typec_mode == POWER_SUPPLY_TYPEC_SINK) {
 		if (gpio_is_valid(chg->switch_sel_gpio)) {
 			gpio_set_value(chg->switch_sel_gpio, 0);
@@ -9595,9 +9591,6 @@ void rerun_reverse_check(struct smb_charger *chg)
 
 	if (chg->reverse_charge_state != chg->reverse_charge_mode)
 		chg->reverse_charge_state = chg->reverse_charge_mode;
-
-	pr_err("longcheer:%s,reverse_charge_mode=%d,typec_mode=%d,real_charger_type=%d\n",
-	        __func__, chg->reverse_charge_mode,chg->typec_mode,chg->real_charger_type);
 
 	lct_vbus_enable(chg, false);
 
