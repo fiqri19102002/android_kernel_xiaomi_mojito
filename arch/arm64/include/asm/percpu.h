@@ -59,7 +59,7 @@ static inline void __percpu_write_##sz(void *ptr, unsigned long val)	\
 	WRITE_ONCE(*(u##sz *)ptr, (u##sz)val);				\
 }
 
-#define __PERCPU_OP_CASE(w, sfx, name, sz, op_llsc, op_lse)		\
+#define __PERCPU_OP_CASE(w, sfx, name, sz, op_lse)			\
 static inline void							\
 __percpu_##name##_case_##sz(void *ptr, unsigned long val)		\
 {									\
@@ -67,20 +67,15 @@ __percpu_##name##_case_##sz(void *ptr, unsigned long val)		\
 	u##sz tmp;							\
 									\
 	asm volatile (ARM64_LSE_ATOMIC_INSN(				\
-	/* LL/SC */							\
-	"1:	ldxr" #sfx "\t%" #w "[tmp], %[ptr]\n"			\
-		#op_llsc "\t%" #w "[tmp], %" #w "[tmp], %" #w "[val]\n"	\
-	"	stxr" #sfx "\t%w[loop], %" #w "[tmp], %[ptr]\n"		\
-	"	cbnz	%w[loop], 1b",					\
 	/* LSE atomics */						\
 		#op_lse "\t%" #w "[val], %[ptr]\n"			\
-		__nops(3))						\
+	)								\
 	: [loop] "=&r" (loop), [tmp] "=&r" (tmp),			\
 	  [ptr] "+Q"(*(u##sz *)ptr)					\
 	: [val] "r" ((u##sz)(val)));					\
 }
 
-#define __PERCPU_RET_OP_CASE(w, sfx, name, sz, op_llsc, op_lse)		\
+#define __PERCPU_RET_OP_CASE(w, sfx, name, sz, op_lse)			\
 static inline u##sz							\
 __percpu_##name##_return_case_##sz(void *ptr, unsigned long val)	\
 {									\
@@ -88,15 +83,9 @@ __percpu_##name##_return_case_##sz(void *ptr, unsigned long val)	\
 	u##sz ret;							\
 									\
 	asm volatile (ARM64_LSE_ATOMIC_INSN(				\
-	/* LL/SC */							\
-	"1:	ldxr" #sfx "\t%" #w "[ret], %[ptr]\n"			\
-		#op_llsc "\t%" #w "[ret], %" #w "[ret], %" #w "[val]\n"	\
-	"	stxr" #sfx "\t%w[loop], %" #w "[ret], %[ptr]\n"		\
-	"	cbnz	%w[loop], 1b",					\
 	/* LSE atomics */						\
 		#op_lse "\t%" #w "[val], %" #w "[ret], %[ptr]\n"	\
-		#op_llsc "\t%" #w "[ret], %" #w "[ret], %" #w "[val]\n"	\
-		__nops(2))						\
+	)								\
 	: [loop] "=&r" (loop), [ret] "=&r" (ret),			\
 	  [ptr] "+Q"(*(u##sz *)ptr)					\
 	: [val] "r" ((u##sz)(val)));					\
@@ -104,26 +93,26 @@ __percpu_##name##_return_case_##sz(void *ptr, unsigned long val)	\
 	return ret;							\
 }
 
-#define PERCPU_OP(name, op_llsc, op_lse)				\
-	__PERCPU_OP_CASE(w, b, name,  8, op_llsc, op_lse)		\
-	__PERCPU_OP_CASE(w, h, name, 16, op_llsc, op_lse)		\
-	__PERCPU_OP_CASE(w,  , name, 32, op_llsc, op_lse)		\
-	__PERCPU_OP_CASE( ,  , name, 64, op_llsc, op_lse)
+#define PERCPU_OP(name, op_lse)						\
+	__PERCPU_OP_CASE(w, b, name,  8, op_lse)			\
+	__PERCPU_OP_CASE(w, h, name, 16, op_lse)			\
+	__PERCPU_OP_CASE(w,  , name, 32, op_lse)			\
+	__PERCPU_OP_CASE( ,  , name, 64, op_lse)
 
-#define PERCPU_RET_OP(name, op_llsc, op_lse)				\
-	__PERCPU_RET_OP_CASE(w, b, name,  8, op_llsc, op_lse)		\
-	__PERCPU_RET_OP_CASE(w, h, name, 16, op_llsc, op_lse)		\
-	__PERCPU_RET_OP_CASE(w,  , name, 32, op_llsc, op_lse)		\
-	__PERCPU_RET_OP_CASE( ,  , name, 64, op_llsc, op_lse)
+#define PERCPU_RET_OP(name, op_lse)					\
+	__PERCPU_RET_OP_CASE(w, b, name,  8, op_lse)			\
+	__PERCPU_RET_OP_CASE(w, h, name, 16, op_lse)			\
+	__PERCPU_RET_OP_CASE(w,  , name, 32, op_lse)			\
+	__PERCPU_RET_OP_CASE( ,  , name, 64, op_lse)
 
 PERCPU_RW_OPS(8)
 PERCPU_RW_OPS(16)
 PERCPU_RW_OPS(32)
 PERCPU_RW_OPS(64)
-PERCPU_OP(add, add, stadd)
-PERCPU_OP(andnot, bic, stclr)
-PERCPU_OP(or, orr, stset)
-PERCPU_RET_OP(add, add, ldadd)
+PERCPU_OP(add, stadd)
+PERCPU_OP(andnot, stclr)
+PERCPU_OP(or, stset)
+PERCPU_RET_OP(add, ldadd)
 
 #undef PERCPU_RW_OPS
 #undef __PERCPU_OP_CASE
