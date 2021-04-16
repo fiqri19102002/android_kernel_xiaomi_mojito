@@ -6877,7 +6877,7 @@ int smblib_get_quick_charge_type(struct smb_charger *chg)
 	if (rc < 0)
 		smblib_err(chg, "Couldn't get batt health rc=%d\n", rc);
 
-	if ((pval.intval == POWER_SUPPLY_HEALTH_COLD) || (pval.intval == POWER_SUPPLY_HEALTH_HOT))
+	if ((pval.intval == POWER_SUPPLY_HEALTH_COLD) || (pval.intval == POWER_SUPPLY_HEALTH_OVERHEAT))
 		return 0;
 
 	pr_debug("[%s] real_charger_type=%d pd_verifed=%d qc_class_ab=%d\n",
