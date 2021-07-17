@@ -44,8 +44,6 @@ static struct dsi_display_mode_priv_info default_priv_info = {
 };
 
 #ifdef CONFIG_MACH_XIAOMI_MOJITO
-static struct wakeup_source prim_panel_wakelock;
-
 extern char *saved_command_line;
 #endif
 
@@ -542,7 +540,6 @@ static void dsi_bridge_post_disable_work(struct work_struct *work)
 			touchpanel_recovery_cb_p();
 #endif
 		dsi_bridge_post_disable(&bridge->base);
-		__pm_relax(&prim_panel_wakelock);
 	}
 }
 #endif
@@ -1290,7 +1287,6 @@ struct dsi_bridge *dsi_drm_bridge_init(struct dsi_display *display,
 	mutex_init(&encoder->bridge->lock);
 
 	atomic_set(&resume_pending, 0);
-	wakeup_source_init(&prim_panel_wakelock, "prim_panel_wakelock");
 	atomic_set(&bridge->display_active, false);
 	init_waitqueue_head(&resume_wait_q);
 	INIT_DELAYED_WORK(&bridge->pd_work, dsi_bridge_post_disable_work);
@@ -1312,7 +1308,6 @@ void dsi_drm_bridge_cleanup(struct dsi_bridge *bridge)
 	if (bridge) {
 		atomic_set(&bridge->display_active, false);
 		cancel_delayed_work_sync(&bridge->pd_work);
-		wakeup_source_trash(&prim_panel_wakelock);
 	}
 #endif
 
