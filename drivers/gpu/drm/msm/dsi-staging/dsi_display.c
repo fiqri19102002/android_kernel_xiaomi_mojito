@@ -5827,9 +5827,6 @@ int dsi_display_dev_probe(struct platform_device *pdev)
 	display->pdev = pdev;
 	display->boot_disp = boot_disp;
 	display->dsi_type = dsi_type;
-#ifdef CONFIG_MACH_XIAOMI_MOJITO
-	display->is_prim_display = true;
-#endif
 
 	dsi_display_parse_cmdline_topology(display, index);
 
