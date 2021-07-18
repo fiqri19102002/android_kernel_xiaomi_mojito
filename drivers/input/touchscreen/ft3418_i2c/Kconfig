@@ -4,6 +4,7 @@
 
 config TOUCHSCREEN_FT3418_I2C
     bool "Focaltech Touchscreen for mojito"
+    depends on DRM
     default y
     help
       Say Y here if you have Focaltech touch panel.
