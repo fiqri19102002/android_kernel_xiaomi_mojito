@@ -11,3 +11,7 @@ steps:
     environment: 
       TELEGRAM_TOKEN: 
         from_secret: BOT_API_KEY
+
+trigger:
+  event:
+  - custom
