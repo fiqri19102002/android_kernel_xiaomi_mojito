@@ -1788,7 +1788,7 @@
 		qcom,eud-clock-vote-req;
 		clocks = <&clock_gcc GCC_AHB2PHY_WEST_CLK>;
 		clock-names = "eud_ahb2phy_clk";
-		status = "ok";
+		status = "disabled";
 	};
 
 	slim_aud: slim@62dc0000 {
@@ -2966,7 +2966,7 @@
 #include "sm6150-usb.dtsi"
 
 &usb0 {
-	extcon = <&pm6150_pdphy>, <&pm6150_charger>, <&eud>;
+	extcon = <&pm6150_pdphy>, <&pm6150_charger>;
 };
 
 &pm6150_vadc {
