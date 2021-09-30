@@ -2231,6 +2231,8 @@ struct task_struct *fork_idle(int cpu)
 	return task;
 }
 
+extern int kp_active_mode(void);
+
 /*
  *  Ok, this is the main fork-routine.
  *
@@ -2248,10 +2250,19 @@ long _do_fork(unsigned long clone_flags,
 	int trace = 0;
 	long nr;
 
-	/* Boost DDR bus to the max for 50 ms when userspace launches an app */
-	if (task_is_zygote(current)) {
+	/*
+	 * Boost DDR bus and CPU to the max when userspace 
+	 * launches an app according to set kernel profile.
+	 */
+	if (task_is_zygote(current) && ((kp_active_mode() == 2) || (kp_active_mode() == 0))) {
 		cpu_input_boost_kick_max(50);
 		devfreq_boost_kick_max(DEVFREQ_CPU_LLCC_DDR_BW, 50);
+	} else if (task_is_zygote(current) && (kp_active_mode() == 3)) {
+		cpu_input_boost_kick_max(75);
+		devfreq_boost_kick_max(DEVFREQ_CPU_LLCC_DDR_BW, 75);
+	} else if (task_is_zygote(current) && (kp_active_mode() == 1)) {
+		/* Do nothing :) */
+		pr_info("Battery profile detected! Skipping CPU & DDR bus boost...\n");
 	}
 
 	/*
