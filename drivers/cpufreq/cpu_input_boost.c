@@ -48,6 +48,8 @@ struct boost_drv {
 	unsigned long last_input_jiffies;
 };
 
+extern int kp_active_mode(void);
+
 static void input_unboost_worker(struct work_struct *work);
 static void max_unboost_worker(struct work_struct *work);
 
@@ -121,7 +123,7 @@ bool cpu_input_boost_within_input(unsigned long timeout_ms)
 
 static void __cpu_input_boost_kick(struct boost_drv *b)
 {
-	if (test_bit(SCREEN_OFF, &b->state))
+	if (test_bit(SCREEN_OFF, &b->state) || kp_active_mode() == 1)
 		return;
 
 	set_bit(INPUT_BOOST, &b->state);
@@ -143,7 +145,7 @@ static void __cpu_input_boost_kick_max(struct boost_drv *b,
 	unsigned long boost_jiffies = msecs_to_jiffies(duration_ms);
 	unsigned long curr_expires, new_expires;
 
-	if (test_bit(SCREEN_OFF, &b->state))
+	if (test_bit(SCREEN_OFF, &b->state) || kp_active_mode() == 1)
 		return;
 
 	do {
