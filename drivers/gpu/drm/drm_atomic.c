@@ -2262,9 +2262,6 @@ static int __drm_mode_atomic_ioctl(struct drm_device *dev, void *data,
 		} else if (kp_active_mode() == 3) {
 			cpu_input_boost_kick();
 			devfreq_boost_kick(DEVFREQ_CPU_LLCC_DDR_BW);
-		} else {
-			/* Do nothing :) */
-			pr_info("Battery profile detected! Skipping CPU & DDR bus boosts\n");
 		}
 	}
 
