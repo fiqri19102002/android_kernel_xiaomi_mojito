@@ -93,6 +93,8 @@ VDSO_AFLAGS += -D__ASSEMBLY__
 
 ifeq ($(cc-name),clang)
 KBUILD_CFLAGS += -mcpu=cortex-a55 -mtune=cortex-a55
+else ifeq ($(cc-name),gcc)
+VDSO_CFLAGS += -mtune=cortex-a76.cortex-a55
 endif
 
 # From arm vDSO Makefile

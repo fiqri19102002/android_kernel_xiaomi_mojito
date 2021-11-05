@@ -58,4 +58,6 @@ ccflags-$(CONFIG_WIREGUARD_DEBUG) += -DCONFIG_ZINC_SELFTEST
 
 ifeq ($(cc-name),clang)
 ccflags-y += -mcpu=cortex-a55 -mtune=cortex-a55+crypto
+else ifeq ($(cc-name),gcc)
+ccflags-y += -mcpu=cortex-a76.cortex-a55+crc+crypto
 endif

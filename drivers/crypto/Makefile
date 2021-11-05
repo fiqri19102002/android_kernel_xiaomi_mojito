@@ -50,4 +50,6 @@ obj-$(CONFIG_CRYPTO_DEV_ARTPEC6) += axis/
 
 ifeq ($(cc-name),clang)
 ccflags-y += -mcpu=cortex-a55 -mtune=cortex-a55+crypto
+else ifeq ($(cc-name),gcc)
+ccflags-y += -mcpu=cortex-a76.cortex-a55+crc+crypto
 endif
