@@ -373,15 +373,7 @@ static void msm_restart_prepare(const char *cmd)
 				__raw_writel(0x6f656d00 | (code & 0xff),
 					     restart_reason);
 		} else if (!strncmp(cmd, "edl", 3)) {
-#ifdef CONFIG_MACH_XIAOMI_MOJITO
-			if (0) {
-				enable_emergency_dload_mode();
-			} else {
-				pr_notice("This command already been disabled\n");
-			}
-#else
 			enable_emergency_dload_mode();
-#endif
 		} else {
 #ifdef CONFIG_MACH_XIAOMI_MOJITO
 			qpnp_pon_set_restart_reason(PON_RESTART_REASON_NORMAL);
