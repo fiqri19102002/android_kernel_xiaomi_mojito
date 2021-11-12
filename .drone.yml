@@ -1,0 +1,13 @@
+---
+clone:
+  depth: 1
+kind: pipeline
+name: STRIX kernel
+steps:
+  - name: compile
+    image: fadlyas/kernel_dockerfile:latest
+    commands:
+      - bash build.sh
+    environment: 
+      TELEGRAM_TOKEN: 
+        from_secret: BOT_API_KEY
