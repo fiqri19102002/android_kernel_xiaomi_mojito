@@ -30,7 +30,7 @@
 #include <linux/interrupt.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
-#include <linux/mutex.h>
+#include <linux/rtmutex.h>
 #include <linux/of.h>
 #include <linux/of_gpio.h>
 #include <linux/platform_device.h>
@@ -89,7 +89,7 @@ struct fpc1020_data {
 	int nbr_irqs_received;
 	int nbr_irqs_received_counter_start;
 
-	struct mutex lock; /* To set/get exported values in sysfs */
+	struct rt_mutex lock; /* To set/get exported values in sysfs */
 	bool prepared;
 #ifdef CONFIG_FPC_COMPAT
 	bool compatible_enabled;
@@ -229,9 +229,9 @@ static ssize_t pinctl_set(struct device *dev,
 	struct fpc1020_data *fpc1020 = dev_get_drvdata(dev);
 	int rc;
 
-	mutex_lock(&fpc1020->lock);
+	rt_mutex_lock(&fpc1020->lock);
 	rc = select_pin_ctl(fpc1020, buf);
-	mutex_unlock(&fpc1020->lock);
+	rt_mutex_unlock(&fpc1020->lock);
 
 	return rc ? rc : count;
 }
@@ -255,9 +255,9 @@ static ssize_t regulator_enable_set(struct device *dev,
 	else
 		return -EINVAL;
 
-	mutex_lock(&fpc1020->lock);
+	rt_mutex_lock(&fpc1020->lock);
 	rc = vreg_setup(fpc1020, name, enable);
-	mutex_unlock(&fpc1020->lock);
+	rt_mutex_unlock(&fpc1020->lock);
 
 	return rc ? rc : count;
 }
@@ -300,9 +300,9 @@ static ssize_t hw_reset_set(struct device *dev,
 	struct fpc1020_data *fpc1020 = dev_get_drvdata(dev);
 
 	if (!strncmp(buf, "reset", strlen("reset"))) {
-		mutex_lock(&fpc1020->lock);
+		rt_mutex_lock(&fpc1020->lock);
 		rc = hw_reset(fpc1020);
-		mutex_unlock(&fpc1020->lock);
+		rt_mutex_unlock(&fpc1020->lock);
 	} else {
 		return -EINVAL;
 	}
@@ -327,7 +327,7 @@ static int device_prepare(struct fpc1020_data *fpc1020, bool enable)
 {
 	int rc;
 
-	mutex_lock(&fpc1020->lock);
+	rt_mutex_lock(&fpc1020->lock);
 	if (enable && !fpc1020->prepared) {
 		fpc1020->prepared = true;
 		select_pin_ctl(fpc1020, "fpc1020_reset_reset");
@@ -368,7 +368,7 @@ exit:
 	} else {
 		rc = 0;
 	}
-	mutex_unlock(&fpc1020->lock);
+	rt_mutex_unlock(&fpc1020->lock);
 
 	return rc;
 }
@@ -405,14 +405,14 @@ static ssize_t wakeup_enable_set(struct device *dev,
 	struct fpc1020_data *fpc1020 = dev_get_drvdata(dev);
 	ssize_t ret = count;
 
-	mutex_lock(&fpc1020->lock);
+	rt_mutex_lock(&fpc1020->lock);
 	if (!strncmp(buf, "enable", strlen("enable")))
 		atomic_set(&fpc1020->wakeup_enabled, 1);
 	else if (!strncmp(buf, "disable", strlen("disable")))
 		atomic_set(&fpc1020->wakeup_enabled, 0);
 	else
 		ret = -EINVAL;
-	mutex_unlock(&fpc1020->lock);
+	rt_mutex_unlock(&fpc1020->lock);
 
 	return ret;
 }
@@ -427,7 +427,7 @@ static ssize_t handle_wakelock_cmd(struct device *dev,
 	struct  fpc1020_data *fpc1020 = dev_get_drvdata(dev);
 	ssize_t ret = count;
 
-	mutex_lock(&fpc1020->lock);
+	rt_mutex_lock(&fpc1020->lock);
 	if (!strncmp(buf, RELEASE_WAKELOCK_W_V,
 		min(count, strlen(RELEASE_WAKELOCK_W_V)))) {
 		if (fpc1020->nbr_irqs_received_counter_start ==
@@ -447,7 +447,7 @@ static ssize_t handle_wakelock_cmd(struct device *dev,
 		fpc1020->nbr_irqs_received;
 	} else
 		ret = -EINVAL;
-	mutex_unlock(&fpc1020->lock);
+	rt_mutex_unlock(&fpc1020->lock);
 
 	return ret;
 }
@@ -604,12 +604,12 @@ static irqreturn_t fpc1020_irq_handler(int irq, void *handle)
 
 	dev_dbg(fpc1020->dev, "%s\n", __func__);
 
-	mutex_lock(&fpc1020->lock);
+	rt_mutex_lock(&fpc1020->lock);
 	if (atomic_read(&fpc1020->wakeup_enabled)) {
 		fpc1020->nbr_irqs_received++;
 		__pm_wakeup_event(fpc1020->ttw_wl, FPC_TTW_HOLD_TIME);
 	}
-	mutex_unlock(&fpc1020->lock);
+	rt_mutex_unlock(&fpc1020->lock);
 
 	sysfs_notify(&fpc1020->dev->kobj, NULL, dev_attr_irq.attr.name);
 
@@ -717,7 +717,7 @@ static int fpc1020_probe(struct platform_device *pdev)
 		device_init_wakeup(dev, 1);
 	}
 
-	mutex_init(&fpc1020->lock);
+	rt_mutex_init(&fpc1020->lock);
 	rc = devm_request_threaded_irq(dev, gpio_to_irq(fpc1020->irq_gpio),
 			NULL, fpc1020_irq_handler, irqf,
 			dev_name(dev), fpc1020);
@@ -754,7 +754,7 @@ static int fpc1020_probe(struct platform_device *pdev)
 		goto exit;
 	}
 #else
-	mutex_init(&fpc1020->lock);
+	rt_mutex_init(&fpc1020->lock);
 
 	fpc1020->ttw_wl = wakeup_source_register(dev, "fpc_ttw_wl");
 	if (!fpc1020->ttw_wl)
@@ -777,7 +777,7 @@ static int fpc1020_remove(struct platform_device *pdev)
 {
 	struct fpc1020_data *fpc1020 = platform_get_drvdata(pdev);
 	sysfs_remove_group(&pdev->dev.kobj, &attribute_group);
-	mutex_destroy(&fpc1020->lock);
+	rt_mutex_destroy(&fpc1020->lock);
 	wakeup_source_unregister(fpc1020->ttw_wl);
 	(void)vreg_setup(fpc1020, "vdd_ana", false);
 	(void)vreg_setup(fpc1020, "vdd_io", false);
