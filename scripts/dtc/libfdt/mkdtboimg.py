@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
 
 """Tool for packing multiple DTB/DTBO files into a single image"""
 
@@ -26,14 +25,14 @@ from array import array
 from collections import namedtuple
 from sys import stdout
 
-class CompressionFormat(object):
+class CompressionFormat:
     """Enum representing DT compression format for a DT entry.
     """
     NO_COMPRESSION = 0x00
     ZLIB_COMPRESSION = 0x01
     GZIP_COMPRESSION = 0x02
 
-class DtEntry(object):
+class DtEntry:
     """Provides individual DT image file arguments to be added to a DTBO.
 
     Attributes:
@@ -205,7 +204,7 @@ class DtEntry(object):
         """int: DT entry custom3 for this DT image."""
         return self.__custom3
 
-class Dtbo(object):
+class Dtbo:
     """
     Provides parser, reader, writer for dumping and creating Device Tree Blob
     Overlay (DTBO) images.
@@ -431,7 +430,7 @@ class Dtbo(object):
                                                          value=self.__dict__[key]))
         count = 0
         for dt_entry in self.__dt_entries:
-            sb.append('dt_table_entry[{0:d}]:'.format(count))
+            sb.append(f'dt_table_entry[{count:d}]:')
             sb.append(str(dt_entry))
             count = count + 1
         return '\n'.join(sb)
@@ -724,7 +723,7 @@ def parse_config_file(fin, dt_keys, global_key_types):
     """
 
     # set all global defaults
-    global_args = dict((k, '0') for k in dt_keys)
+    global_args = {k: '0' for k in dt_keys}
     global_args['dt_type'] = 'dtb'
     global_args['page_size'] = 2048
     global_args['version'] = 0
@@ -870,7 +869,7 @@ def dump_dtbo_image(fin, argv):
     if args.dtfilename:
         num_entries = len(dtbo.dt_entries)
         for idx in range(0, num_entries):
-            with open(args.dtfilename + '.{:d}'.format(idx), 'wb') as fout:
+            with open(args.dtfilename + f'.{idx:d}', 'wb') as fout:
                 dtbo.extract_dt_file(idx, fout, args.decompress)
     args.outfile.write(str(dtbo) + '\n')
     args.outfile.close()
