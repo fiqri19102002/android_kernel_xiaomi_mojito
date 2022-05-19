@@ -36,6 +36,9 @@
 #define DSI_CMD_PPS_SIZE 135
 
 #define DSI_MODE_MAX 5
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+#define BUF_LEN_MAX 256
+#endif
 
 enum dsi_panel_rotation {
 	DSI_PANEL_ROTATE_NONE = 0,
@@ -166,7 +169,22 @@ struct drm_panel_esd_config {
 	u8 *return_buf;
 	u8 *status_buf;
 	u32 groups;
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	int esd_err_irq_gpio;
+	int esd_err_irq;
+	int esd_err_irq_flags;
+#endif
 };
+
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+struct dsi_read_config {
+	bool enabled;
+	struct dsi_panel_cmd_set read_cmd;
+	u32 cmds_rlen;
+	u32 valid_bits;
+	u8 rbuf[64];
+};
+#endif
 
 struct dsi_panel {
 	const char *name;
@@ -212,12 +230,26 @@ struct dsi_panel {
 	bool te_using_watchdog_timer;
 	u32 qsync_min_fps;
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	bool dispparam_enabled;
+	u32 skip_dimmingon;
+#endif
+
 	char dsc_pps_cmd[DSI_CMD_PPS_SIZE];
 	enum dsi_dms_mode dms_mode;
 
 	bool sync_broadcast_en;
 	int power_mode;
 	enum dsi_panel_physical_type panel_type;
+
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	u8 panel_read_data[BUF_LEN_MAX];
+	struct dsi_read_config xy_coordinate_cmds;
+
+	bool in_aod; /* set DISPPARAM_DOZE_BRIGHTNESS_HBM/LBM only in AOD */
+	bool nolp_command_set_backlight_enabled;
+	bool oled_panel_video_mode;
+#endif
 };
 
 static inline bool dsi_panel_ulps_feature_enabled(struct dsi_panel *panel)
@@ -337,5 +369,13 @@ struct dsi_panel *dsi_panel_ext_bridge_get(struct device *parent,
 int dsi_panel_parse_esd_reg_read_configs(struct dsi_panel *panel);
 
 void dsi_panel_ext_bridge_put(struct dsi_panel *panel);
+
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+ssize_t dsi_panel_mipi_reg_write(struct dsi_panel *panel,
+				char *buf, size_t count);
+
+ssize_t dsi_panel_mipi_reg_read(struct dsi_panel *panel,
+				char *buf);
+#endif
 
 #endif /* _DSI_PANEL_H_ */
