@@ -88,6 +88,7 @@ endif
 
 else # TARGET_BOARD_TYPE != auto
 
+ifneq ($(CONFIG_MACH_XIAOMI_MOJITO),y)
 dtb-$(CONFIG_ARCH_QCOM)	+= apq8016-sbc.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= apq8096-db820c.dtb
 dtb-$(CONFIG_ARCH_QCOM)	+= ipq8074-hk01.dtb
@@ -104,6 +105,7 @@ dtb-$(CONFIG_ARCH_QCS403) += qcs403-iot-sku1.dtb \
 		qcs404-iot-sku6.dtb \
 		sa2145p-ccard-nand-dc.dtb \
 		sa2150p-ccard-nand-dc.dtb
+endif
 
 dtb-$(CONFIG_ARCH_QCS405) += qcs405-iot-sku1.dtb \
 		qcs407-iot-sku1.dtb \
@@ -238,6 +240,10 @@ dtb-$(CONFIG_ARCH_SDMSHRIKE)	+= sdmshrike-rumi.dtb \
 endif
 
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
+ifeq ($(CONFIG_MACH_XIAOMI_MOJITO),y)
+	dtbo-y += sm6150-idp-overlay.dtbo
+sm6150-idp-overlay.dtbo-base := sm6150.dtb
+else
 	dtbo-$(CONFIG_ARCH_SM6150) += \
 		sm6150-rumi-overlay.dtbo \
 		sm6150-qrd-overlay.dtbo \
@@ -286,6 +292,7 @@ prairie-iot-external-codec-idp-overlay.dtbo-base := qcs610.dtb
 prairie-iot-usbc-idp-overlay.dtbo-base := qcs610.dtb
 prairie-iot-cmd-mode-display-idp-overlay.dtbo-base := qcs610.dtb
 prairie-iot-usbc-minidp-idp-overlay.dtbo-base := qcs610.dtb
+endif
 else
 dtb-$(CONFIG_ARCH_SM6150)	+= sm6150-rumi.dtb \
 	sm6150-qrd.dtb \
