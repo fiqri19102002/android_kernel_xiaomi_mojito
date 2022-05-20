@@ -20,6 +20,11 @@
 #include "cam_common_util.h"
 #include "cam_packet_util.h"
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+extern int wl2866d_camera_power_up_eeprom(void);
+extern int wl2866d_camera_power_down_eeprom(void);
+#endif
+
 /**
  * cam_eeprom_read_memory() - read map data into buffer
  * @e_ctrl:     eeprom control struct
@@ -113,7 +118,11 @@ static int cam_eeprom_read_memory(struct cam_eeprom_ctrl_t *e_ctrl,
 				emap[j].mem.addr_type,
 				emap[j].mem.data_type,
 				emap[j].mem.valid_size);
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+			if (rc) {
+#else
 			if (rc < 0) {
+#endif
 				CAM_ERR(CAM_EEPROM, "read failed rc %d",
 					rc);
 				return rc;
@@ -156,6 +165,9 @@ static int cam_eeprom_power_up(struct cam_eeprom_ctrl_t *e_ctrl,
 	struct cam_hw_soc_info *soc_info =
 		&e_ctrl->soc_info;
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	CAM_DBG(CAM_EEPROM, "xyz eeprom %s %d", __func__, __LINE__);
+#endif
 	/* Parse and fill vreg params for power up settings */
 	rc = msm_camera_fill_vreg_params(
 		&e_ctrl->soc_info,
@@ -214,6 +226,9 @@ static int cam_eeprom_power_down(struct cam_eeprom_ctrl_t *e_ctrl)
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	CAM_DBG(CAM_EEPROM, "xyz eeprom %s %d", __func__, __LINE__);
+#endif
 	soc_private =
 		(struct cam_eeprom_soc_private *)e_ctrl->soc_info.soc_private;
 	power_info = &soc_private->power_info;
@@ -881,6 +896,15 @@ static int32_t cam_eeprom_pkt_parse(struct cam_eeprom_ctrl_t *e_ctrl, void *arg)
 			goto error;
 		}
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+		CAM_DBG(CAM_EEPROM, "xyz eeprom power_up %s %d", __func__, __LINE__);
+		rc = wl2866d_camera_power_up_eeprom();
+		if (rc < 0) {
+			CAM_ERR(CAM_EEPROM, "xyz wl2866d_camera_power_up_eeprom failed, rc=%d", rc);
+			goto memdata_free;
+		}
+#endif
+
 		rc = cam_eeprom_power_up(e_ctrl,
 			&soc_private->power_info);
 		if (rc) {
@@ -891,13 +915,35 @@ static int32_t cam_eeprom_pkt_parse(struct cam_eeprom_ctrl_t *e_ctrl, void *arg)
 		e_ctrl->cam_eeprom_state = CAM_EEPROM_CONFIG;
 		rc = cam_eeprom_read_memory(e_ctrl, &e_ctrl->cal_data);
 		if (rc) {
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+			/* cuixiaojie@xiaomi.com add diff eeprom module compatible 2019-11-12 start */
+			CAM_ERR(CAM_EEPROM,
+				"read_eeprom_memory failed, rc = %d", rc);
+			cam_destroy_device_hdl(e_ctrl->bridge_intf.device_hdl);
+			CAM_ERR(CAM_EEPROM, "destroying the device hdl");
+
+			e_ctrl->bridge_intf.device_hdl = -1;
+			e_ctrl->bridge_intf.link_hdl = -1;
+			e_ctrl->bridge_intf.session_hdl = -1;
+			/* cuixiaojie@xiaomi.com add diff eeprom module compatible 2019-11-12 end */
+#else
 			CAM_ERR(CAM_EEPROM,
 				"read_eeprom_memory failed");
+#endif
 			goto power_down;
 		}
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+		CAM_DBG(CAM_EEPROM, "xyz eeprom power_down %s %d", __func__, __LINE__);
+#endif
 		rc = cam_eeprom_get_cal_data(e_ctrl, csl_packet);
 		rc = cam_eeprom_power_down(e_ctrl);
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+		rc = wl2866d_camera_power_down_eeprom();
+		if (rc < 0) {
+			CAM_ERR(CAM_EEPROM, "xyz wl2866d_camera_power_down_eeprom failed, rc=%d", rc);
+		}
+#endif
 		e_ctrl->cam_eeprom_state = CAM_EEPROM_ACQUIRE;
 		vfree(e_ctrl->cal_data.mapdata);
 		vfree(e_ctrl->cal_data.map);
@@ -948,6 +994,9 @@ void cam_eeprom_shutdown(struct cam_eeprom_ctrl_t *e_ctrl)
 		(struct cam_eeprom_soc_private *)e_ctrl->soc_info.soc_private;
 	struct cam_sensor_power_ctrl_t *power_info = &soc_private->power_info;
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	CAM_DBG(CAM_EEPROM, "xyz eeprom %s %d", __func__, __LINE__);
+#endif
 	if (e_ctrl->cam_eeprom_state == CAM_EEPROM_INIT)
 		return;
 
