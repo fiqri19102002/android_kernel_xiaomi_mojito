@@ -45,6 +45,9 @@ static int cam_eeprom_subdev_close(struct v4l2_subdev *sd,
 			return -EINVAL;
 	}
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+    CAM_DBG(CAM_EEPROM, "xyz eeprom %s %d", __func__, __LINE__);
+#endif
 	mutex_lock(&(e_ctrl->eeprom_mutex));
 	cam_eeprom_shutdown(e_ctrl);
 	mutex_unlock(&(e_ctrl->eeprom_mutex));
