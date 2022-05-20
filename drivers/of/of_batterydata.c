@@ -338,6 +338,9 @@ struct device_node *of_batterydata_get_best_profile(
 			return ERR_PTR(-ENXIO);
 		}
 	}
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	pr_err("sunxing test batt_id_kohm %d\n",batt_id_kohm);
+#endif
 
 	/*
 	 * Find the battery data with a battery id resistor closest to this one
@@ -377,7 +380,18 @@ struct device_node *of_batterydata_get_best_profile(
 	}
 
 	if (best_node == NULL) {
+#ifndef CONFIG_MACH_XIAOMI_MOJITO
+		for_each_child_of_node(batterydata_container_node, node) {
+			rc = of_property_read_string(node, "qcom,battery-type", &battery_type);
+			if (!rc && strcmp(battery_type,"unknown-default") == 0) {
+			best_node = node;
+			break;
+			}
+		}
+		if (best_node)
+#else
 		pr_err("No battery data found\n");
+#endif
 		return best_node;
 	}
 
