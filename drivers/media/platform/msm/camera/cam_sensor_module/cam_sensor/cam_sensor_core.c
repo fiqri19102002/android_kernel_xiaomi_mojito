@@ -19,6 +19,23 @@
 #include "cam_common_util.h"
 #include "cam_packet_util.h"
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+extern int wl2866d_camera_power_up(uint16_t camera_id);
+extern int wl2866d_camera_power_down(uint16_t camera_id);
+extern int wl2866d_camera_power_down_all(void);
+extern int wl2866d_camera_power_up_all(void);
+
+extern char *saved_command_line;
+static int is_camera_probed = 0;
+/* [bit5 bit4 bit3 bit2 bit1 bit0] */
+/* [cam5 cam4 cam3 cam2 cam1 cam0] */
+/* camera_id 0 --> imx682 */
+/* camera_id 1 --> ov02b1b/gc02m1b */
+/* camera_id 2 --> s5k3t2 */
+/* camera_id 3 --> hi1337 */
+/* camera_id 4 --> hi259 */
+/* camera_id 5 --> hi847 */
+#endif
 
 static void cam_sensor_update_req_mgr(
 	struct cam_sensor_ctrl_t *s_ctrl,
@@ -370,6 +387,9 @@ int32_t cam_sensor_update_slave_info(struct cam_cmd_probe *probe_info,
 	s_ctrl->pipeline_delay =
 		probe_info->reserved;
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	s_ctrl->sensordata->camera_id = probe_info->camera_id;
+#endif 
 	s_ctrl->sensor_probe_addr_type =  probe_info->addr_type;
 	s_ctrl->sensor_probe_data_type =  probe_info->data_type;
 	CAM_DBG(CAM_SENSOR,
@@ -630,6 +650,17 @@ int cam_sensor_match_id(struct cam_sensor_ctrl_t *s_ctrl)
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	rc = camera_io_dev_read(
+            &(s_ctrl->io_master_info),
+            slave_info->sensor_id_reg_addr,
+            &chipid, s_ctrl->sensor_probe_addr_type,
+            s_ctrl->sensor_probe_data_type);
+
+	CAM_ERR(CAM_SENSOR, "xyz read id: 0x%x expected id 0x%x:",
+			 chipid, slave_info->sensor_id);
+#else
+
 	rc = camera_io_dev_read(
 		&(s_ctrl->io_master_info),
 		slave_info->sensor_id_reg_addr,
@@ -638,13 +669,23 @@ int cam_sensor_match_id(struct cam_sensor_ctrl_t *s_ctrl)
 
 	CAM_DBG(CAM_SENSOR, "read id: 0x%x expected id 0x%x:",
 			 chipid, slave_info->sensor_id);
+#endif
 	if (cam_sensor_id_by_mask(s_ctrl, chipid) != slave_info->sensor_id) {
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+		CAM_ERR(CAM_SENSOR, "xyz chip id %x does not match %x",
+				chipid, slave_info->sensor_id);
+#else
 		CAM_ERR(CAM_SENSOR, "chip id %x does not match %x",
 				chipid, slave_info->sensor_id);
+#endif
 		return -ENODEV;
 	}
 	return rc;
 }
+
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+uint32_t operation_mode; /* xulei16 add for face unlock */
+#endif
 
 int32_t cam_sensor_driver_cmd(struct cam_sensor_ctrl_t *s_ctrl,
 	void *arg)
@@ -653,10 +694,20 @@ int32_t cam_sensor_driver_cmd(struct cam_sensor_ctrl_t *s_ctrl,
 	struct cam_control *cmd = (struct cam_control *)arg;
 	struct cam_sensor_power_ctrl_t *power_info =
 		&s_ctrl->sensordata->power_info;
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	struct cam_sensor_board_info * sensordata = s_ctrl->sensordata;
+#endif
 	if (!s_ctrl || !arg) {
 		CAM_ERR(CAM_SENSOR, "s_ctrl is NULL");
 		return -EINVAL;
 	}
+
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	if (!sensordata) {
+		CAM_ERR(CAM_SENSOR, "xyz sensordata failed: %pK", sensordata);
+		return -EINVAL;
+	}
+#endif
 
 	if (cmd->op_code != CAM_SENSOR_PROBE_CMD) {
 		if (cmd->handle_type != CAM_HANDLE_USER_POINTER) {
@@ -713,6 +764,16 @@ int32_t cam_sensor_driver_cmd(struct cam_sensor_ctrl_t *s_ctrl,
 			goto free_power_settings;
 		}
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+        pr_err("xyz camera probe p_camera_id=[%d]\n", sensordata->camera_id);
+        rc = wl2866d_camera_power_up_all();
+        if (rc < 0) {
+            CAM_ERR(CAM_SENSOR, "xyz wl2866d_camera_power_up_all failed %s %d, rc=%d",
+               __func__, __LINE__, rc);
+            goto free_power_settings;
+        }
+#endif
+
 		/* Power up and probe sensor */
 		rc = cam_sensor_power_up(s_ctrl);
 		if (rc < 0) {
@@ -728,17 +789,58 @@ int32_t cam_sensor_driver_cmd(struct cam_sensor_ctrl_t *s_ctrl,
 			goto free_power_settings;
 		}
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+		CAM_INFO(CAM_SENSOR,
+			"Probe success,slot:%d,slave_addr:0x%x,sensor_id:0x%x, camera_id=[%d]",
+			s_ctrl->soc_info.index,
+			s_ctrl->sensordata->slave_info.sensor_slave_addr,
+			s_ctrl->sensordata->slave_info.sensor_id,
+			sensordata->camera_id);
+#else
 		CAM_INFO(CAM_SENSOR,
 			"Probe success,slot:%d,slave_addr:0x%x,sensor_id:0x%x",
 			s_ctrl->soc_info.index,
 			s_ctrl->sensordata->slave_info.sensor_slave_addr,
 			s_ctrl->sensordata->slave_info.sensor_id);
+#endif
+
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+		if (0 == sensordata->camera_id) { /* wide */
+			is_camera_probed |= 1 << 0;
+		} else if (1 == sensordata->camera_id) { /* depth */
+			is_camera_probed |= 1 << 1;
+		} else if (2 == sensordata->camera_id) { /* front */
+			is_camera_probed |= 1 << 2;
+		} else if (3 == sensordata->camera_id) { /* Ultra wide */
+			is_camera_probed |= 1 << 3;
+		} else if (4 == sensordata->camera_id) { /* macro */
+			is_camera_probed |= 1 << 4;
+		} else if (5 == sensordata->camera_id) { /* tele */
+			is_camera_probed |= 1 << 5;
+		}
+#endif
 
 		rc = cam_sensor_power_down(s_ctrl);
 		if (rc < 0) {
 			CAM_ERR(CAM_SENSOR, "fail in Sensor Power Down");
 			goto free_power_settings;
 		}
+
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+		if ((strnstr(saved_command_line, "androidboot.hwname=sunny", strlen(saved_command_line)) != NULL) ||
+		    (strnstr(saved_command_line, "androidboot.hwname=mojito", strlen(saved_command_line)) != NULL)) {
+			if (0x1F == is_camera_probed) { /* hwid = 4 back camera device */
+				CAM_ERR(CAM_SENSOR, "xyz K7 4 back camera probe succese, power down multi LDO");
+				rc = wl2866d_camera_power_down_all();
+			}
+		}
+
+		if (rc < 0) {
+			CAM_ERR(CAM_SENSOR, "xyz fail in Sensor multi LDO Power Down");
+			goto free_power_settings;
+		}
+#endif
+
 		/*
 		 * Set probe succeeded flag to 1 so that no other camera shall
 		 * probed on this slot
@@ -773,6 +875,11 @@ int32_t cam_sensor_driver_cmd(struct cam_sensor_ctrl_t *s_ctrl,
 			goto release_mutex;
 		}
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+		operation_mode = sensor_acq_dev.operation_mode; /* xulei16 add for faceunlock */
+		CAM_DBG(CAM_SENSOR, "operation_mode:%d", operation_mode);
+#endif
+
 		bridge_params.session_hdl = sensor_acq_dev.session_handle;
 		bridge_params.ops = &s_ctrl->bridge_intf.ops;
 		bridge_params.v4l2_sub_dev_flag = 0;
@@ -793,6 +900,16 @@ int32_t cam_sensor_driver_cmd(struct cam_sensor_ctrl_t *s_ctrl,
 			rc = -EFAULT;
 			goto release_mutex;
 		}
+
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+		pr_err("xyz camera power up p_camera_id=[%d]\n", sensordata->camera_id);
+		rc = wl2866d_camera_power_up(sensordata->camera_id);
+		if (rc < 0) {
+			CAM_ERR(CAM_SENSOR, "xyz wl2866d_camera_power_up failed %s %d, rc=%d",
+			         __func__, __LINE__, rc);
+			goto release_mutex;
+		}
+#endif
 
 		rc = cam_sensor_power_up(s_ctrl);
 		if (rc < 0) {
@@ -832,6 +949,14 @@ int32_t cam_sensor_driver_cmd(struct cam_sensor_ctrl_t *s_ctrl,
 			CAM_ERR(CAM_SENSOR, "Sensor Power Down failed");
 			goto release_mutex;
 		}
+
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+		rc = wl2866d_camera_power_down(sensordata->camera_id);
+		if (rc < 0) {
+			CAM_ERR(CAM_SENSOR, "power down the core is failed:%d", rc);
+			goto release_mutex;
+		}
+#endif
 
 		cam_sensor_release_per_frame_resource(s_ctrl);
 		cam_sensor_release_stream_rsc(s_ctrl);
@@ -1035,6 +1160,10 @@ int cam_sensor_publish_dev_info(struct cam_req_mgr_device_info *info)
 		info->p_delay = 2;
 	info->trigger = CAM_TRIGGER_POINT_SOF;
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	if (operation_mode == 0x8006) /* xulei16 add for face unlock */
+		info->p_delay = 0;
+#endif
 	return rc;
 }
 
