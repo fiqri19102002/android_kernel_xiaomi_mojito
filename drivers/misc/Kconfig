@@ -628,3 +628,8 @@ config OKL4_LINK_SHBUF
 	      transport. This driver presents the link to Linux as a character device
 	      which can be written to or read from to access the shared memory. An ioctl
 	      on the device is used to send a virtual interrupt to the partner cell.
+
+config LDO_WL2866D
+	bool "multi ldo wl2866d"
+	help
+	  This option enables multi ldo wl2866d.
