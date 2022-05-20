@@ -48,7 +48,12 @@
 #define SCM_DLOAD_FULLDUMP		0X10
 #define SCM_EDLOAD_MODE			0X01
 #define SCM_DLOAD_CMD			0x10
+#ifdef CONFIG_LAST_LOG_MINIDUMP
+/* chengong@longcheer.com,20201014,modify for last log feature */
+#define SCM_DLOAD_MINIDUMP		0X40
+#else
 #define SCM_DLOAD_MINIDUMP		0X20
+#endif
 #define SCM_DLOAD_BOTHDUMPS	(SCM_DLOAD_MINIDUMP | SCM_DLOAD_FULLDUMP)
 
 static int restart_mode;
@@ -77,7 +82,12 @@ static bool force_warm_reboot;
 
 static int in_panic;
 static struct kobject dload_kobj;
+#ifdef CONFIG_LAST_LOG_MINIDUMP
+/* chengong@longcheer.com,20201014,modify for last log feature */
+static int dload_type = SCM_DLOAD_BOTHDUMPS;
+#else
 static int dload_type = SCM_DLOAD_FULLDUMP;
+#endif
 static void *dload_mode_addr;
 static void *dload_type_addr;
 static bool dload_mode_enabled;
@@ -313,11 +323,21 @@ static void msm_restart_prepare(const char *cmd)
 		pr_info("Forcing a warm reset of the system\n");
 
 	/* Hard reset the PMIC unless memory contents must be maintained. */
-	if (force_warm_reboot || need_warm_reset)
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	if (force_warm_reboot || need_warm_reset || in_panic) {
+		pr_info("a warm reset of the system with in_panic %d or need_warm_reset %d\n", in_panic, need_warm_reset);
+#else
+	if (force_warm_reboot || need_warm_reset) {
+#endif
 		qpnp_pon_system_pwr_off(PON_POWER_OFF_WARM_RESET);
-	else
+	} else
 		qpnp_pon_system_pwr_off(PON_POWER_OFF_HARD_RESET);
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	if (in_panic) {
+			qpnp_pon_set_restart_reason(PON_RESTART_REASON_PANIC);
+	} else
+#endif
 	if (cmd != NULL) {
 		if (!strncmp(cmd, "bootloader", 10)) {
 			qpnp_pon_set_restart_reason(
@@ -352,10 +372,26 @@ static void msm_restart_prepare(const char *cmd)
 				__raw_writel(0x6f656d00 | (code & 0xff),
 					     restart_reason);
 		} else if (!strncmp(cmd, "edl", 3)) {
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+			if (0) {
+				enable_emergency_dload_mode();
+			} else {
+				pr_notice("This command already been disabled\n");
+			}
+#else
 			enable_emergency_dload_mode();
+#endif
 		} else {
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+			qpnp_pon_set_restart_reason(PON_RESTART_REASON_NORMAL);
+#endif
 			__raw_writel(0x77665501, restart_reason);
 		}
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	} else {
+		qpnp_pon_set_restart_reason(PON_RESTART_REASON_NORMAL);
+		__raw_writel(0x77665501, restart_reason);
+#endif
 	}
 
 	flush_cache_all();
