@@ -26,6 +26,10 @@
 #include <net/genetlink.h>
 #include <linux/suspend.h>
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+#include <linux/cpu_cooling.h>
+#include <linux/msm_drm_notify.h>
+#endif
 #define CREATE_TRACE_POINTS
 #include <trace/events/thermal.h>
 
@@ -37,6 +41,9 @@ MODULE_DESCRIPTION("Generic thermal management sysfs support");
 MODULE_LICENSE("GPL v2");
 
 #define THERMAL_MAX_ACTIVE	16
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+#define CPU_LIMITS_PARAM_NUM    2 /* add for thermal-k7 */
+#endif
 
 static DEFINE_IDA(thermal_tz_ida);
 static DEFINE_IDA(thermal_cdev_ida);
@@ -48,6 +55,26 @@ static LIST_HEAD(thermal_governor_list);
 static DEFINE_MUTEX(thermal_list_lock);
 static DEFINE_MUTEX(thermal_governor_lock);
 static DEFINE_MUTEX(poweroff_lock);
+
+
+#if defined(CONFIG_DRM) && defined(CONFIG_MACH_XIAOMI_MOJITO)
+/* add for thermal begin */
+struct screen_monitor {
+	struct notifier_block thermal_notifier;
+	int screen_state;
+};
+
+struct screen_monitor sm;
+#endif
+
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+static atomic_t switch_mode = ATOMIC_INIT(-1);
+static atomic_t temp_state = ATOMIC_INIT(0);
+static char boost_buf[128];
+const char *board_sensor;
+static char board_sensor_temp[128];
+/* add for thermal end */
+#endif
 
 static atomic_t in_suspend;
 static bool power_off_triggered;
@@ -942,6 +969,10 @@ static struct class thermal_class = {
 	.dev_release = thermal_release,
 };
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+static struct device thermal_message_dev; /* add for thermal-k7 */
+#endif
+
 static inline
 void print_bind_err_msg(struct thermal_zone_device *tz,
 			struct thermal_cooling_device *cdev, int ret)
@@ -1622,6 +1653,260 @@ static struct notifier_block thermal_pm_nb = {
 	.notifier_call = thermal_pm_notify,
 };
 
+#if defined(CONFIG_DRM) && defined(CONFIG_MACH_XIAOMI_MOJITO)
+/* add for thermal begin */
+static ssize_t
+thermal_screen_state_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	return snprintf(buf, PAGE_SIZE, "%d\n", sm.screen_state);
+}
+
+static DEVICE_ATTR(screen_state, 0664,
+		thermal_screen_state_show, NULL);
+#endif
+
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+static ssize_t
+thermal_sconfig_show(struct device *dev,
+			struct device_attribute *attr, char *buf)
+{
+	return snprintf(buf, PAGE_SIZE, "%d\n", atomic_read(&switch_mode));
+}
+
+
+static ssize_t
+thermal_sconfig_store(struct device *dev,
+			struct device_attribute *attr, const char *buf, size_t len)
+{
+	int val = -1;
+
+	val = simple_strtol(buf, NULL, 10);
+
+	atomic_set(&switch_mode, val);
+
+	return len;
+}
+
+static DEVICE_ATTR(sconfig, 0664,
+		   thermal_sconfig_show, thermal_sconfig_store);
+
+static ssize_t
+thermal_boost_show(struct device *dev,
+			struct device_attribute *attr, char *buf)
+{
+	return snprintf(buf, PAGE_SIZE, boost_buf);
+}
+
+static ssize_t
+thermal_boost_store(struct device *dev,
+			struct device_attribute *attr, const char *buf, size_t len)
+{
+	int ret;
+	ret = snprintf(boost_buf, PAGE_SIZE, buf);
+	return len;
+}
+
+static DEVICE_ATTR(boost, 0644,
+		   thermal_boost_show, thermal_boost_store);
+
+static ssize_t
+thermal_temp_state_show(struct device *dev,
+			struct device_attribute *attr, char *buf)
+{
+	return snprintf(buf, PAGE_SIZE, "%d\n", atomic_read(&temp_state));
+}
+
+static ssize_t
+thermal_temp_state_store(struct device *dev,
+			struct device_attribute *attr, const char *buf, size_t len)
+{
+	int val = -1;
+
+	val = simple_strtol(buf, NULL, 10);
+
+	atomic_set(&temp_state, val);
+
+	return len;
+}
+
+static DEVICE_ATTR(temp_state, 0664,
+		   thermal_temp_state_show, thermal_temp_state_store);
+
+static ssize_t
+cpu_limits_show(struct device *dev,
+			struct device_attribute *attr, char *buf)
+{
+	return 0;
+}
+
+static ssize_t
+cpu_limits_store(struct device *dev,
+			struct device_attribute *attr, const char *buf, size_t len)
+{
+	unsigned int cpu;
+	unsigned int max;
+
+	if (sscanf(buf, "cpu%u %u", &cpu, &max) != CPU_LIMITS_PARAM_NUM) {
+		pr_err("input param error, can not prase param\n");
+		return -EINVAL;
+	}
+
+	cpu_limits_set_level(cpu, max);
+
+	return len;
+}
+
+static DEVICE_ATTR(cpu_limits, 0664,
+		   cpu_limits_show, cpu_limits_store);
+
+static ssize_t
+thermal_board_sensor_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	if (!board_sensor) {
+		board_sensor = "invalid";
+		printk("thermal_board_sensor invalid.\n");
+	}
+
+	return snprintf(buf, PAGE_SIZE, "%s", board_sensor);
+}
+
+static DEVICE_ATTR(board_sensor, 0664,
+		thermal_board_sensor_show, NULL);
+
+static ssize_t
+thermal_board_sensor_temp_show(struct device *dev,
+				struct device_attribute *attr, char *buf)
+{
+       return snprintf(buf, PAGE_SIZE, board_sensor_temp);
+}
+
+static ssize_t
+thermal_board_sensor_temp_store(struct device *dev,
+				struct device_attribute *attr, const char *buf, size_t len)
+{
+       snprintf(board_sensor_temp, PAGE_SIZE, buf);
+
+       return len;
+}
+
+static DEVICE_ATTR(board_sensor_temp, 0664,
+		thermal_board_sensor_temp_show, thermal_board_sensor_temp_store);
+
+static int create_thermal_message_node(void)
+{
+	int ret = 0;
+
+	thermal_message_dev.class = &thermal_class;
+
+	dev_set_name(&thermal_message_dev, "thermal_message");
+	ret = device_register(&thermal_message_dev);
+	if (!ret) {
+#if defined(CONFIG_DRM) && defined(CONFIG_MACH_XIAOMI_MOJITO)
+		ret = sysfs_create_file(&thermal_message_dev.kobj, &dev_attr_screen_state.attr);
+		if (ret < 0)
+			pr_warn("Thermal: create batt message node failed\n");
+#endif
+		ret = sysfs_create_file(&thermal_message_dev.kobj, &dev_attr_sconfig.attr);
+		if (ret < 0)
+			pr_warn("Thermal: create sconfig node failed\n");
+
+		ret = sysfs_create_file(&thermal_message_dev.kobj, &dev_attr_boost.attr);
+		if (ret < 0)
+			pr_warn("Thermal: create boost node failed\n");
+
+		ret = sysfs_create_file(&thermal_message_dev.kobj, &dev_attr_temp_state.attr);
+		if (ret < 0)
+			pr_warn("Thermal: create temp state node failed\n");
+
+		ret = sysfs_create_file(&thermal_message_dev.kobj, &dev_attr_cpu_limits.attr);
+		if (ret < 0)
+			pr_warn("Thermal: create cpu limits node failed\n");
+
+		ret = sysfs_create_file(&thermal_message_dev.kobj, &dev_attr_board_sensor.attr);
+		if (ret < 0)
+			pr_warn("Thermal: create board sensor node failed\n");
+
+		ret = sysfs_create_file(&thermal_message_dev.kobj, &dev_attr_board_sensor_temp.attr);
+		if (ret < 0)
+			pr_warn("Thermal: create board sensor temp node failed\n");
+	}
+
+	return ret;
+}
+
+static void destroy_thermal_message_node(void)
+{
+	sysfs_remove_file(&thermal_message_dev.kobj, &dev_attr_cpu_limits.attr);
+	sysfs_remove_file(&thermal_message_dev.kobj, &dev_attr_temp_state.attr);
+	sysfs_remove_file(&thermal_message_dev.kobj, &dev_attr_boost.attr);
+	sysfs_remove_file(&thermal_message_dev.kobj, &dev_attr_sconfig.attr);
+	sysfs_remove_file(&thermal_message_dev.kobj, &dev_attr_board_sensor_temp.attr);
+	sysfs_remove_file(&thermal_message_dev.kobj, &dev_attr_board_sensor.attr);
+#if defined(CONFIG_DRM) && defined(CONFIG_MACH_XIAOMI_MOJITO)
+	sysfs_remove_file(&thermal_message_dev.kobj, &dev_attr_screen_state.attr);
+#endif
+	device_unregister(&thermal_message_dev);
+}
+#endif
+
+#if defined(CONFIG_DRM) && defined(CONFIG_MACH_XIAOMI_MOJITO)
+static int screen_state_for_thermal_callback(struct notifier_block *nb, unsigned long val, void *data)
+{
+	struct drm_notify_data *evdata = data;
+	unsigned int blank;
+
+	if (val != DRM_EVENT_BLANK || !evdata || !evdata->data)
+		return 0;
+
+	blank = *(int *)(evdata->data);
+	switch (blank) {
+	case DRM_BLANK_LP1:
+		pr_warn("%s: DRM_BLANK_LP1\n", __func__);
+	case DRM_BLANK_LP2:
+		pr_warn("%s: DRM_BLANK_LP2\n", __func__);
+	case DRM_BLANK_POWERDOWN:
+		sm.screen_state = 0;
+		pr_warn("%s: DRM_BLANK_POWERDOWN\n", __func__);
+		break;
+	case DRM_BLANK_UNBLANK:
+		sm.screen_state = 1;
+		pr_warn("%s: DRM_BLANK_UNBLANK\n", __func__);
+		break;
+	default:
+		break;
+	}
+
+	sysfs_notify(&thermal_message_dev.kobj, NULL, "screen_state");
+
+	return NOTIFY_OK;
+}
+/* add for thermal end */
+#endif
+
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+/* add for thermal begin */
+static int of_parse_thermal_message(void)
+{
+	struct device_node *np;
+
+	np = of_find_node_by_name(NULL, "thermal-message");
+	if (!np)
+		return -EINVAL;
+
+	if (of_property_read_string(np, "board-sensor", &board_sensor))
+		return -EINVAL;
+
+	pr_info("%s board sensor: %s\n", board_sensor);
+
+	printk("board sensor: %s\n", board_sensor);
+
+	return 0;
+}
+/* add for thermal end */
+#endif
+
 static int __init thermal_init(void)
 {
 	int result;
@@ -1653,6 +1938,26 @@ static int __init thermal_init(void)
 		pr_warn("Thermal: Can not register suspend notifier, return %d\n",
 			result);
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	/* add for thermal begin */
+	result = create_thermal_message_node();
+	if (result)
+		pr_warn("Thermal: create thermal message node failed, return %d\n",
+			result);
+
+	result = of_parse_thermal_message();
+	if (result)
+		pr_warn("Thermal: Can not parse thermal message node, return %d\n",
+			result);
+#endif
+#if defined(CONFIG_DRM) && defined(CONFIG_MACH_XIAOMI_MOJITO)
+	sm.thermal_notifier.notifier_call = screen_state_for_thermal_callback;
+	if (drm_register_client(&sm.thermal_notifier) < 0) {
+		pr_warn("Thermal: register screen state callback failed\n");
+	}
+	/* add for thermal end */
+#endif
+
 	return 0;
 
 exit_zone_parse:
@@ -1672,10 +1977,20 @@ error:
 
 static void thermal_exit(void)
 {
+
+#if defined(CONFIG_DRM) && defined(CONFIG_MACH_XIAOMI_MOJITO)
+	drm_unregister_client(&sm.thermal_notifier);
+#endif
+
 	unregister_pm_notifier(&thermal_pm_nb);
 	of_thermal_destroy_zones();
 	destroy_workqueue(thermal_passive_wq);
 	genetlink_exit();
+
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	destroy_thermal_message_node();
+#endif
+
 	class_unregister(&thermal_class);
 	thermal_unregister_governors();
 	ida_destroy(&thermal_tz_ida);
