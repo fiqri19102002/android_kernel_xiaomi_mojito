@@ -3,6 +3,9 @@
 #include <linux/slab.h>
 #include <linux/device.h>
 #include <linux/nls.h>
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+#include <linux/power_supply.h>
+#endif
 #include <linux/usb/composite.h>
 #include <linux/usb/gadget_configfs.h>
 #include "configfs.h"
@@ -1290,6 +1293,29 @@ static void purge_configs_funcs(struct gadget_info *gi)
 	}
 }
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+static int smblib_canncel_recheck(void)
+{
+	union power_supply_propval pval = {0};
+	struct power_supply     *usb_psy = NULL;
+	int rc = 0;
+
+	if (!usb_psy) {
+		usb_psy = power_supply_get_by_name("usb");
+		if (!usb_psy) {
+			pr_err("Could not get usb psy by canncel recheck\n");
+			return -ENODEV;
+		}
+	}
+
+	pval.intval = 0;
+	rc = power_supply_set_property(usb_psy,
+				POWER_SUPPLY_PROP_TYPE_RECHECK, &pval);
+
+	return rc;
+}
+#endif
+
 static int configfs_composite_bind(struct usb_gadget *gadget,
 		struct usb_gadget_driver *gdriver)
 {
@@ -1469,6 +1495,9 @@ static void android_work(struct work_struct *data)
 		kobject_uevent_env(&gi->dev->kobj,
 					KOBJ_CHANGE, configured);
 		pr_info("%s: sent uevent %s\n", __func__, configured[0]);
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+		smblib_canncel_recheck();
+#endif
 		uevent_sent = true;
 	}
 

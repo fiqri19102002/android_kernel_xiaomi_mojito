@@ -135,6 +135,10 @@ static bool eud_connected;
 module_param(eud_connected, bool, 0644);
 MODULE_PARM_DESC(eud_connected, "EUD_CONNECTED");
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+unsigned long panel_info = 0;
+#endif
+
 struct qusb_phy {
 	struct usb_phy		phy;
 	void __iomem		*base;
@@ -444,6 +448,9 @@ static int qusb_phy_init(struct usb_phy *phy)
 	struct qusb_phy *qphy = container_of(phy, struct qusb_phy, phy);
 	int ret, reset_val = 0;
 	u8 reg;
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	int i;
+#endif
 	bool pll_lock_fail = false;
 
 	/*
@@ -531,6 +538,12 @@ static int qusb_phy_init(struct usb_phy *phy)
 	if (qphy->qusb_phy_init_seq)
 		qusb_phy_write_seq(qphy->base, qphy->qusb_phy_init_seq,
 				qphy->init_seq_len, 0);
+
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	for (i = 0; i < qphy->init_seq_len; i = i + 2) {
+		pr_debug("yangyangyang:write 0x%02x to 0x%02x\n", qphy->qusb_phy_init_seq[i], qphy->qusb_phy_init_seq[i+1]);
+	}
+#endif
 
 	/*
 	 * Check for EFUSE value only if tune2_efuse_reg is available
@@ -1023,6 +1036,10 @@ static int qusb_phy_probe(struct platform_device *pdev)
 	bool hold_phy_reset;
 	u32 temp;
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+    dev_err(dev, "yangyangyang:phy-msm-qusb probe\n");
+#endif
+
 	qphy = devm_kzalloc(dev, sizeof(*qphy), GFP_KERNEL);
 	if (!qphy)
 		return -ENOMEM;
@@ -1256,7 +1273,15 @@ static int qusb_phy_probe(struct platform_device *pdev)
 	}
 
 	size = 0;
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	pr_info("panel_info %x\n",panel_info);
+	if (panel_info == 1)
+		of_get_property(dev->of_node, "qcom,qusb-phy-init-seq", &size);
+	else if (panel_info == 0)
+		of_get_property(dev->of_node, "qcom,qusb-phy-init-seq-no-panel", &size);
+#else
 	of_get_property(dev->of_node, "qcom,qusb-phy-init-seq", &size);
+#endif
 	if (size) {
 		qphy->qusb_phy_init_seq = devm_kzalloc(dev,
 						size, GFP_KERNEL);
@@ -1268,10 +1293,23 @@ static int qusb_phy_probe(struct platform_device *pdev)
 				return -EINVAL;
 			}
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+			if (panel_info == 1)
+				of_property_read_u32_array(dev->of_node,
+					"qcom,qusb-phy-init-seq",
+					qphy->qusb_phy_init_seq,
+					qphy->init_seq_len);
+			else if (panel_info == 0)
+				of_property_read_u32_array(dev->of_node,
+					"qcom,qusb-phy-init-seq-no-panel",
+					qphy->qusb_phy_init_seq,
+					qphy->init_seq_len);
+#else
 			of_property_read_u32_array(dev->of_node,
 				"qcom,qusb-phy-init-seq",
 				qphy->qusb_phy_init_seq,
 				qphy->init_seq_len);
+#endif
 		} else {
 			dev_err(dev, "error allocating memory for phy_init_seq\n");
 		}
@@ -1382,6 +1420,24 @@ static int qusb_phy_remove(struct platform_device *pdev)
 
 	return 0;
 }
+
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+static int __init parameter_select(char *str)
+{
+	int ret = 0;
+
+	ret = kstrtol(str, 10, &panel_info);
+	if (ret < 0)
+		return ret;
+
+	if (panel_info > 1)
+		pr_err("can't get panel_info\n");
+
+	pr_info("get panel_info %x from cmdline\n",panel_info);
+	return 1;
+}
+__setup("panel_info=",parameter_select);
+#endif
 
 static const struct of_device_id qusb_phy_id_table[] = {
 	{ .compatible = "qcom,qusb2phy", },
