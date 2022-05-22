@@ -565,7 +565,12 @@ static int qusb_phy_init(struct usb_phy *phy)
 	if (qphy->qusb_phy_init_seq)
 		qusb_phy_write_seq(qphy->base, qphy->qusb_phy_init_seq,
 				qphy->init_seq_len, 0);
+
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	if (0) {
+#else
 	if (qphy->efuse_reg) {
+#endif
 		if (!qphy->tune_val)
 			qusb_phy_get_tune1_param(qphy);
 
@@ -606,6 +611,12 @@ static int qusb_phy_init(struct usb_phy *phy)
 	/* Require to get phy pll lock successfully */
 	usleep_range(150, 160);
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	reg = readb_relaxed(qphy->base + qphy->phy_reg[PORT_TUNE1]);
+	dev_dbg(phy->dev, "tune1= %x\n", reg);
+	reg = readb_relaxed(qphy->base + qphy->phy_reg[BIAS_CTRL_2]);
+	dev_dbg(phy->dev, "bias_ctrl2= %x\n", reg);
+#endif
 	reg = readb_relaxed(qphy->base + qphy->phy_reg[PLL_COMMON_STATUS_ONE]);
 	dev_dbg(phy->dev, "QUSB2PHY_PLL_COMMON_STATUS_ONE:%x\n", reg);
 	if (!(reg & CORE_READY_STATUS)) {
