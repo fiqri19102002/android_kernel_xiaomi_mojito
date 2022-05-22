@@ -2267,6 +2267,12 @@ static int cpufreq_set_policy(struct cpufreq_policy *policy,
 	blocking_notifier_call_chain(&cpufreq_policy_notifier_list,
 			CPUFREQ_INCOMPATIBLE, new_policy);
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	/* add for thermal */
+	blocking_notifier_call_chain(&cpufreq_policy_notifier_list,
+			CPUFREQ_THERMAL, new_policy);
+#endif
+
 	/*
 	 * verify the cpu speed can be set within this limit, which might be
 	 * different to the first one
