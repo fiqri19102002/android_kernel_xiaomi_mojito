@@ -47,6 +47,9 @@ static const char * const power_supply_type_text[] = {
 	"USB_HVDCP", "USB_HVDCP_3", "USB_HVDCP_3P5", "Wireless", "USB_FLOAT",
 	"BMS", "Parallel", "Main", "Wipower", "USB_C_UFP", "USB_C_DFP",
 	"Charge_Pump",
+#ifdef CONFIG_BATT_VERIFY_BY_DS28E16
+	"batt_verify",
+#endif
 };
 
 static const char * const power_supply_status_text[] = {
@@ -111,9 +114,14 @@ static ssize_t power_supply_show_property(struct device *dev,
 				dev_dbg(dev, "driver has no data for `%s' property\n",
 					attr->attr.name);
 			else if (ret != -ENODEV && ret != -EAGAIN)
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+				dev_err(dev, "driver failed to report `%s' property: %zd\n",
+					attr->attr.name, ret);
+#else
 				dev_err_ratelimited(dev,
 					"driver failed to report `%s' property: %zd\n",
 					attr->attr.name, ret);
+#endif
 			return ret;
 		}
 	}
@@ -160,9 +168,30 @@ static ssize_t power_supply_show_property(struct device *dev,
 			       power_supply_health_text[value.intval]);
 	else if (off >= POWER_SUPPLY_PROP_MODEL_NAME)
 		return sprintf(buf, "%s\n", value.strval);
+#ifdef CONFIG_BATT_VERIFY_BY_DS28E16
+	else if ((off == POWER_SUPPLY_PROP_ROMID) || (off == POWER_SUPPLY_PROP_DS_STATUS))
+		return scnprintf(buf, PAGE_SIZE, "%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x\n",
+			value.arrayval[0], value.arrayval[1], value.arrayval[2], value.arrayval[3],
+			value.arrayval[4], value.arrayval[5], value.arrayval[6], value.arrayval[7]);
+	else if ((off == POWER_SUPPLY_PROP_PAGE0_DATA) || 
+		  (off == POWER_SUPPLY_PROP_PAGE1_DATA) || 
+		  (off == POWER_SUPPLY_PROP_PAGEDATA))
+		return scnprintf(buf, PAGE_SIZE, "%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x\n",
+			value.arrayval[0], value.arrayval[1], value.arrayval[2], value.arrayval[3],
+			value.arrayval[4], value.arrayval[5], value.arrayval[6], value.arrayval[7],
+			value.arrayval[8], value.arrayval[9], value.arrayval[10], value.arrayval[11],
+			value.arrayval[12], value.arrayval[13], value.arrayval[14], value.arrayval[15]);
+	else if (off == POWER_SUPPLY_PROP_VERIFY_MODEL_NAME)
+		return snprintf(buf, PAGE_SIZE, "%s\n", value.strval);
+#endif
 
 	if (off == POWER_SUPPLY_PROP_CHARGE_COUNTER_EXT)
 		return sprintf(buf, "%lld\n", value.int64val);
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	else if (off == POWER_SUPPLY_PROP_TYPE_RECHECK)
+		return scnprintf(buf, PAGE_SIZE, "0x%x\n",
+				value.intval);
+#endif
 	else
 		return sprintf(buf, "%d\n", value.intval);
 }
@@ -271,6 +300,10 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(capacity_alert_min),
 	POWER_SUPPLY_ATTR(capacity_alert_max),
 	POWER_SUPPLY_ATTR(capacity_level),
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	POWER_SUPPLY_ATTR(soc_decimal),
+	POWER_SUPPLY_ATTR(soc_decimal_rate),
+#endif
 	POWER_SUPPLY_ATTR(temp),
 	POWER_SUPPLY_ATTR(temp_max),
 	POWER_SUPPLY_ATTR(temp_min),
@@ -294,6 +327,10 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(charge_enabled),
 	POWER_SUPPLY_ATTR(set_ship_mode),
 	POWER_SUPPLY_ATTR(real_type),
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	POWER_SUPPLY_ATTR(hvdcp3_type),
+	POWER_SUPPLY_ATTR(quick_charge_type),
+#endif
 	POWER_SUPPLY_ATTR(charge_now_raw),
 	POWER_SUPPLY_ATTR(charge_now_error),
 	POWER_SUPPLY_ATTR(capacity_raw),
@@ -332,6 +369,9 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(flash_trigger),
 	POWER_SUPPLY_ATTR(force_tlim),
 	POWER_SUPPLY_ATTR(dp_dm),
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	POWER_SUPPLY_ATTR(dp_dm_bq),
+#endif
 	POWER_SUPPLY_ATTR(input_current_limited),
 	POWER_SUPPLY_ATTR(input_current_now),
 	POWER_SUPPLY_ATTR(charge_qnovo_enable),
@@ -348,6 +388,9 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(typec_src_rp),
 	POWER_SUPPLY_ATTR(pd_allowed),
 	POWER_SUPPLY_ATTR(pd_active),
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	POWER_SUPPLY_ATTR(pd_authentication),
+#endif
 	POWER_SUPPLY_ATTR(pd_in_hard_reset),
 	POWER_SUPPLY_ATTR(pd_current_max),
 	POWER_SUPPLY_ATTR(pd_usb_suspend_supported),
@@ -378,8 +421,15 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(moisture_detected),
 	POWER_SUPPLY_ATTR(batt_profile_version),
 	POWER_SUPPLY_ATTR(batt_full_current),
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	POWER_SUPPLY_ATTR(battery_charging_limited),
+	POWER_SUPPLY_ATTR(bq_input_suspend),
+#endif
 	POWER_SUPPLY_ATTR(recharge_soc),
 	POWER_SUPPLY_ATTR(hvdcp_opti_allowed),
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	POWER_SUPPLY_ATTR(fastcharge_mode),
+#endif
 	POWER_SUPPLY_ATTR(smb_en_mode),
 	POWER_SUPPLY_ATTR(smb_en_reason),
 	POWER_SUPPLY_ATTR(esr_actual),
@@ -397,6 +447,9 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(voltage_vph),
 	POWER_SUPPLY_ATTR(chip_version),
 	POWER_SUPPLY_ATTR(therm_icl_limit),
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	POWER_SUPPLY_ATTR(type_recheck),
+#endif
 	POWER_SUPPLY_ATTR(dc_reset),
 	POWER_SUPPLY_ATTR(scale_mode_en),
 	POWER_SUPPLY_ATTR(voltage_max_limit),
@@ -409,6 +462,10 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(skin_health),
 	POWER_SUPPLY_ATTR(apsd_rerun),
 	POWER_SUPPLY_ATTR(apsd_timeout),
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	POWER_SUPPLY_ATTR(qc3p5_power_limit),
+	POWER_SUPPLY_ATTR(qc3p5_current_max),
+#endif
 	/* Charge pump properties */
 	POWER_SUPPLY_ATTR(cp_status1),
 	POWER_SUPPLY_ATTR(cp_status2),
@@ -422,6 +479,63 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(cp_ilim),
 	POWER_SUPPLY_ATTR(irq_status),
 	POWER_SUPPLY_ATTR(parallel_output_mode),
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	POWER_SUPPLY_ATTR(ffc_chg_term_current),
+
+	/* Bq charge pump properties */
+	POWER_SUPPLY_ATTR(ti_battery_present),
+	POWER_SUPPLY_ATTR(ti_vbus_present),
+	POWER_SUPPLY_ATTR(ti_battery_voltage),
+	POWER_SUPPLY_ATTR(ti_battery_current),
+	POWER_SUPPLY_ATTR(ti_battery_temperature),
+	POWER_SUPPLY_ATTR(ti_bus_voltage),
+	POWER_SUPPLY_ATTR(ti_bus_current),
+	POWER_SUPPLY_ATTR(ti_bus_temperature),
+	POWER_SUPPLY_ATTR(ti_die_temperature),
+	POWER_SUPPLY_ATTR(ti_alarm_status),
+	POWER_SUPPLY_ATTR(ti_fault_status),
+	POWER_SUPPLY_ATTR(ti_reg_status),
+	POWER_SUPPLY_ATTR(ti_set_bus_protection_for_qc3),
+#ifdef CONFIG_BATT_VERIFY_BY_DS28E16
+	/* battery verify properties */
+	POWER_SUPPLY_ATTR(romid),
+	POWER_SUPPLY_ATTR(ds_status),
+	POWER_SUPPLY_ATTR(pagenumber),
+	POWER_SUPPLY_ATTR(pagedata),
+	POWER_SUPPLY_ATTR(authen_result),
+	POWER_SUPPLY_ATTR(session_seed),
+	POWER_SUPPLY_ATTR(s_secret),
+	POWER_SUPPLY_ATTR(challenge),
+	POWER_SUPPLY_ATTR(auth_anon),
+	POWER_SUPPLY_ATTR(auth_bdconst),
+	POWER_SUPPLY_ATTR(page0_data),
+	POWER_SUPPLY_ATTR(page1_data),
+	POWER_SUPPLY_ATTR(verify_model_name),
+	POWER_SUPPLY_ATTR(chip_ok),
+#endif
+#ifdef CONFIG_REVERSE_CHARGE
+	POWER_SUPPLY_ATTR(reverse_charge_mode),
+#endif
+	POWER_SUPPLY_ATTR(charge_awske_state),
+#else
+#ifdef CONFIG_BATT_VERIFY_BY_DS28E16
+	/* battery verify properties */
+	POWER_SUPPLY_ATTR(romid),
+	POWER_SUPPLY_ATTR(ds_status),
+	POWER_SUPPLY_ATTR(pagenumber),
+	POWER_SUPPLY_ATTR(pagedata),
+	POWER_SUPPLY_ATTR(authen_result),
+	POWER_SUPPLY_ATTR(session_seed),
+	POWER_SUPPLY_ATTR(s_secret),
+	POWER_SUPPLY_ATTR(challenge),
+	POWER_SUPPLY_ATTR(auth_anon),
+	POWER_SUPPLY_ATTR(auth_bdconst),
+	POWER_SUPPLY_ATTR(page0_data),
+	POWER_SUPPLY_ATTR(page1_data),
+	POWER_SUPPLY_ATTR(verify_model_name),
+#endif
+	POWER_SUPPLY_ATTR(chip_ok),
+#endif
 	/* Local extensions of type int64_t */
 	POWER_SUPPLY_ATTR(charge_counter_ext),
 	/* Properties of type `const char *' */
@@ -506,10 +620,18 @@ int power_supply_uevent(struct device *dev, struct kobj_uevent_env *env)
 	char *prop_buf;
 	char *attrname;
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	dev_dbg(dev, "uevent\n");
+#endif
+
 	if (!psy || !psy->desc) {
 		dev_dbg(dev, "No power supply yet\n");
 		return ret;
 	}
+
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	dev_dbg(dev, "POWER_SUPPLY_NAME=%s\n", psy->desc->name);
+#endif
 
 	ret = add_uevent_var(env, "POWER_SUPPLY_NAME=%s", psy->desc->name);
 	if (ret)
@@ -545,6 +667,10 @@ int power_supply_uevent(struct device *dev, struct kobj_uevent_env *env)
 			ret = -ENOMEM;
 			goto out;
 		}
+
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+		dev_dbg(dev, "prop %s=%s\n", attrname, prop_buf);
+#endif
 
 		ret = add_uevent_var(env, "POWER_SUPPLY_%s=%s", attrname, prop_buf);
 		kfree(attrname);

@@ -143,4 +143,9 @@ config SMB358_CHARGER
 	  The driver reports the charger status via the power supply framework.
 	  A charger status change triggers an IRQ via the device STAT pin.
 
+config REVERSE_CHARGE
+        bool  "reverse charge"
+        ---help---
+        This option enables reverse charge.
+
 endmenu

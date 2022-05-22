@@ -15,6 +15,14 @@
 
 #define MAX_STEP_CHG_ENTRIES	8
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+#define BATT_COOL_THRESHOLD		150
+#define BATT_WARM_THRESHOLD		480
+#define FFC_CHG_TERM_TEMP_THRESHOLD	350
+#define FFC_LOW_TEMP_CHG_TERM_CURRENT	-540
+#define FFC_HIGH_TEMP_CHG_TERM_CURRENT	-590
+#endif
+
 struct step_chg_jeita_param {
 	u32			psy_prop;
 	char			*prop_name;
@@ -27,6 +35,14 @@ struct range_data {
 	int high_threshold;
 	u32 value;
 };
+
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+enum step_hvdcp3_type {
+	STEP_HVDCP3_NONE = 0,
+	STEP_HVDCP3_CLASSA_18W,
+	STEP_HVDCP3_CLASSB_27W,
+};
+#endif
 
 int qcom_step_chg_init(struct device *dev,
 		bool step_chg_enable, bool sw_jeita_enable, bool jeita_arb_en);
