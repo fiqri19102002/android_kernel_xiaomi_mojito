@@ -1215,9 +1215,16 @@ static void uaudio_qmi_disconnect_work(struct work_struct *w)
 			snd_usb_enable_audio_stream(subs, -EINVAL, 0);
 		}
 		atomic_set(&uadev[idx].in_use, 0);
-		mutex_lock(&chip->dev_lock);
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+		if (chip)
+#endif
+			mutex_lock(&chip->dev_lock);
 		uaudio_dev_cleanup(&uadev[idx]);
-		mutex_unlock(&chip->dev_lock);
+
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+		if (chip)
+#endif
+			mutex_unlock(&chip->dev_lock);
 	}
 }
 
