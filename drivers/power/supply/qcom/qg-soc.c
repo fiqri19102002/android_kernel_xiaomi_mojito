@@ -42,7 +42,11 @@ module_param_named(
 	fvss_soc_interval_ms, qg_fvss_delta_soc_interval_ms, int, 0600
 );
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+static int qg_delta_soc_cold_interval_ms = 60000;
+#else
 static int qg_delta_soc_cold_interval_ms = 4000;
+#endif
 module_param_named(
 	soc_cold_interval_ms, qg_delta_soc_cold_interval_ms, int, 0600
 );
@@ -147,6 +151,19 @@ static int qg_process_tcss_soc(struct qpnp_qg *chip, int sys_soc)
 
 	if (chip->sys_soc >= QG_MAX_SOC && chip->soc_tcss >= QG_MAX_SOC)
 		goto exit_soc_scale;
+
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	rc = power_supply_get_property(chip->qg_psy,
+		POWER_SUPPLY_PROP_BATT_FULL_CURRENT, &prop);
+	if (rc < 0) {
+		pr_err("failed to get full_current, rc = %d\n", rc);
+		goto exit_soc_scale;
+	} else {
+		qg_iterm_ua = -1 * prop.intval;
+	}
+
+	pr_err("[%s] qg_iterm_ua=%d\n", __func__, qg_iterm_ua);
+#endif
 
 	rc = power_supply_get_property(chip->batt_psy,
 			POWER_SUPPLY_PROP_HEALTH, &prop);
@@ -419,7 +436,20 @@ static bool maint_soc_timeout(struct qpnp_qg *chip)
 static void update_msoc(struct qpnp_qg *chip)
 {
 	int rc = 0, sdam_soc, batt_temp = 0;
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	int batt_cur = 0;
+#endif
 	bool input_present = is_input_present(chip);
+
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	rc = qg_get_battery_current(chip, &batt_cur);
+	if (rc < 0) {
+		pr_err("Failed to read BATT_CUR rc=%d\n", rc);
+	}
+
+	qg_dbg(chip, QG_DEBUG_SOC, "batt_cur=%d input_present=%d msoc=%d catch_up_soc=%d last_fifo_i_ua=%d\n",
+			batt_cur, input_present, chip->msoc, chip->catch_up_soc, chip->last_fifo_i_ua);
+#endif
 
 	if (chip->catch_up_soc > chip->msoc) {
 		/* SOC increased */
@@ -427,7 +457,13 @@ static void update_msoc(struct qpnp_qg *chip)
 			chip->msoc += chip->dt.delta_soc;
 	} else if (chip->catch_up_soc < chip->msoc) {
 		/* SOC dropped */
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+		if (batt_cur > 0) {
+			chip->msoc -= chip->dt.delta_soc;
+		}
+#else
 		chip->msoc -= chip->dt.delta_soc;
+#endif
 	}
 	chip->msoc = CAP(0, 100, chip->msoc);
 
