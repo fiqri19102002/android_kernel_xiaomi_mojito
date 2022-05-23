@@ -10,3 +10,7 @@ source "drivers/platform/goldfish/Kconfig"
 source "drivers/platform/chrome/Kconfig"
 
 source "drivers/platform/msm/Kconfig"
+
+if ARCH_SM6150
+source "drivers/platform/mojito/Kconfig"
+endif
