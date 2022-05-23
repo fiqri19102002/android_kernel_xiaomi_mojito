@@ -1,0 +1,5 @@
+config MACH_XIAOMI_MOJITO
+	bool "Xiaomi Redmi Note 10"
+	depends on ARCH_SM6150
+	help
+	  Support for Xiaomi Redmi Note 10.
