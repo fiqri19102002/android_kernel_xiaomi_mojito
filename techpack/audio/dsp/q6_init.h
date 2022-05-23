@@ -26,6 +26,9 @@ int rtac_init(void);
 int msm_audio_ion_init(void);
 int audio_slimslave_init(void);
 int avtimer_init(void);
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+int elliptic_driver_init(void);
+#endif
 #ifdef CONFIG_MSM_MDF
 int msm_mdf_init(void);
 void msm_mdf_exit(void);
@@ -65,6 +68,9 @@ void q6asm_exit(void);
 void afe_exit(void);
 void adm_exit(void);
 void adsp_err_exit(void);
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+int elliptic_driver_exit(void);
+#endif
 
 #ifdef CONFIG_VOICE_MHI
 int voice_mhi_init(void);

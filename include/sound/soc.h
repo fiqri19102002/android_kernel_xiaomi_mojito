@@ -1261,6 +1261,11 @@ struct snd_soc_card {
 #endif
 	u32 pop_time;
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	int aw87xxx_spk_mode;
+	int aw87xxx_rcv_mode;
+#endif
+
 	void *drvdata;
 };
 
