@@ -314,6 +314,10 @@ static int wcd937x_rx_clk_enable(struct snd_soc_codec *codec)
 {
 	struct wcd937x_priv *wcd937x = snd_soc_codec_get_drvdata(codec);
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	dev_dbg(wcd937x->dev, "%s:rx_clk_cnt %d,enter\n", __func__,wcd937x->rx_clk_cnt);
+#endif
+
 	if (wcd937x->rx_clk_cnt == 0) {
 		snd_soc_update_bits(codec, WCD937X_DIGITAL_CDC_DIG_CLK_CTL,
 				    0x08, 0x08);
@@ -331,12 +335,20 @@ static int wcd937x_rx_clk_enable(struct snd_soc_codec *codec)
 	}
 	wcd937x->rx_clk_cnt++;
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	dev_dbg(wcd937x->dev, "%s:rx_clk_cnt %d,exit\n", __func__,wcd937x->rx_clk_cnt);
+#endif
+
 	return 0;
 }
 
 static int wcd937x_rx_clk_disable(struct snd_soc_codec *codec)
 {
 	struct wcd937x_priv *wcd937x = snd_soc_codec_get_drvdata(codec);
+
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	dev_dbg(wcd937x->dev, "%s:rx_clk_cnt %d,enter\n",__func__,wcd937x->rx_clk_cnt);
+#endif
 
 	if (wcd937x->rx_clk_cnt == 0) {
 		dev_dbg(wcd937x->dev, "%s:clk already disabled\n", __func__);
@@ -350,6 +362,11 @@ static int wcd937x_rx_clk_disable(struct snd_soc_codec *codec)
 		snd_soc_update_bits(codec, WCD937X_DIGITAL_CDC_ANA_CLK_CTL,
 				    0x01, 0x00);
 	}
+
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	dev_dbg(wcd937x->dev, "%s:rx_clk_cnt %d,exit\n", __func__,wcd937x->rx_clk_cnt);
+#endif
+
 	return 0;
 }
 
@@ -600,7 +617,9 @@ static int wcd937x_codec_aux_dac_event(struct snd_soc_dapm_widget *w,
 
 		break;
 	case SND_SOC_DAPM_POST_PMD:
+#ifndef CONFIG_MACH_XIAOMI_MOJITO
 		wcd937x_rx_clk_disable(codec);
+#endif
 		snd_soc_update_bits(codec, WCD937X_DIGITAL_CDC_ANA_CLK_CTL,
 				    0x04, 0x00);
 		break;
@@ -1793,6 +1812,102 @@ static const struct snd_kcontrol_new tx_adc2_mux =
 static const struct snd_kcontrol_new rx_rdac3_mux =
 	SOC_DAPM_ENUM("RDAC3_MUX Mux", rdac3_enum);
 
+
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+/* chengong */
+extern int aw87xxx_audio_scene_load(uint8_t mode, int32_t channel);
+int aw87xxx_rcv_pa(int enable, int mode)
+{
+	int ret = 0;
+	unsigned char set_mode;
+
+	if (false == enable)
+		set_mode = 0;
+	else
+		set_mode = mode;
+
+	pr_info("%s: aw87xxx_rcv_mode %d\n", __func__, set_mode);
+
+	ret = aw87xxx_audio_scene_load(set_mode, 1);
+	if (ret < 0) {
+		pr_err("%s: mode:%d set failed\n", __func__, set_mode);
+		return -EPERM;
+	}
+	return 0;
+}
+
+int aw87xxx_spk_pa(int enable, int mode)
+{
+	int ret = 0;
+	unsigned char set_mode;
+
+	if (false == enable)
+		set_mode = 0;
+	else
+		set_mode = mode;
+	pr_info("%s: aw87xxx_spk_mode %d\n", __func__, set_mode);
+
+	ret = aw87xxx_audio_scene_load(set_mode, 0);
+	if (ret < 0) {
+		pr_err("%s: mode:%d set failed\n", __func__, set_mode);
+		return -EPERM;
+	}
+	return 0;
+}
+
+static int aw87xxx_rcv_pa_event(struct snd_soc_dapm_widget *w,
+		     struct snd_kcontrol *control, int event)
+{
+	struct snd_soc_codec *codec = snd_soc_dapm_to_codec(w->dapm);
+	struct snd_soc_card *card = NULL;
+	int mode = 0;
+
+	card = codec->component.card;
+	if (card)
+		mode = card->aw87xxx_rcv_mode;
+
+	switch (event) {
+	case SND_SOC_DAPM_POST_PMU:
+		aw87xxx_rcv_pa(true, mode);
+		break;
+	case SND_SOC_DAPM_PRE_PMD:
+		aw87xxx_rcv_pa(false, mode);
+		break;
+	default:
+		pr_debug("%s: Unexpected event", __func__);
+		break;
+	}
+
+	return 0;
+}
+
+static int aw87xxx_spk_pa_event(struct snd_soc_dapm_widget *w,
+		     struct snd_kcontrol *control, int event)
+{
+	struct snd_soc_codec *codec = snd_soc_dapm_to_codec(w->dapm);
+	struct snd_soc_card *card = NULL;
+	int mode = 0;
+
+	card = codec->component.card;
+	if (card)
+		mode = card->aw87xxx_spk_mode;
+
+	switch (event) {
+	case SND_SOC_DAPM_POST_PMU:
+		aw87xxx_spk_pa(true, mode);
+		break;
+	case SND_SOC_DAPM_PRE_PMD:
+		aw87xxx_spk_pa(false, mode);
+		break;
+	default:
+		pr_debug("%s: Unexpected event", __func__);
+		break;
+	}
+
+	return 0;
+}
+#endif
+
 static const struct snd_soc_dapm_widget wcd937x_dapm_widgets[] = {
 
 	/*input widgets*/
@@ -1923,6 +2038,14 @@ static const struct snd_soc_dapm_widget wcd937x_dapm_widgets[] = {
 	SND_SOC_DAPM_OUTPUT("HPHL"),
 	SND_SOC_DAPM_OUTPUT("HPHR"),
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	SND_SOC_DAPM_OUT_DRV_E("AW87xxx_RCV", SND_SOC_NOPM, 0, 0, NULL, 0,
+				aw87xxx_rcv_pa_event, SND_SOC_DAPM_POST_PMU |
+				SND_SOC_DAPM_PRE_PMD),
+	SND_SOC_DAPM_OUT_DRV_E("AW87xxx_SPK", SND_SOC_NOPM, 0, 0, NULL, 0,
+				aw87xxx_spk_pa_event, SND_SOC_DAPM_POST_PMU |
+				SND_SOC_DAPM_PRE_PMD),
+#endif
 };
 
 static const struct snd_soc_dapm_widget wcd9375_dapm_widgets[] = {
@@ -2033,14 +2156,24 @@ static const struct snd_soc_dapm_route wcd937x_audio_map[] = {
 	{"RDAC4", NULL, "RX3"},
 	{"AUX_RDAC", "Switch", "RDAC4"},
 	{"AUX PGA", NULL, "AUX_RDAC"},
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	{"AW87xxx_SPK", NULL, "AUX PGA"},
+	{"AUX", NULL, "AW87xxx_SPK"},
+#else
 	{"AUX", NULL, "AUX PGA"},
+#endif
 
 	{"RDAC3_MUX", "RX3", "RX3"},
 	{"RDAC3_MUX", "RX1", "RX1"},
 	{"RDAC3", NULL, "RDAC3_MUX"},
 	{"EAR_RDAC", "Switch", "RDAC3"},
 	{"EAR PGA", NULL, "EAR_RDAC"},
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	{"AW87xxx_RCV", NULL, "EAR PGA"},
+	{"EAR", NULL, "AW87xxx_RCV"},
+#else
 	{"EAR", NULL, "EAR PGA"},
+#endif
 };
 
 static const struct snd_soc_dapm_route wcd9375_audio_map[] = {
