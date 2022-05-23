@@ -2923,8 +2923,21 @@ int adm_open(int port_id, int path, int rate, int channel_mode, int topology,
 				this_adm.ffecns_port_id);
 	}
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	if (topology == VPM_TX_VOICE_SMECNS_V2_COPP_TOPOLOGY ||
+	    topology == VPM_TX_VOICE_FLUENCE_SM_COPP_TOPOLOGY)
+#else
 	if (topology == VPM_TX_VOICE_SMECNS_V2_COPP_TOPOLOGY)
+#endif
 		channel_mode = 1;
+
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	if (topology == ODM_TMISOUND_HEADPHONE_FX && channel_mode == 4) {
+		pr_info("%s: misound topo %x don't support 4 channels\n",
+				__func__, ODM_TMISOUND_HEADPHONE_FX);
+		channel_mode = 2;
+	}
+#endif
 
 	/*
 	 * Routing driver reuses the same adm for streams with the same
