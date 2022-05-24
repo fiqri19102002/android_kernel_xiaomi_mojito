@@ -1267,7 +1267,7 @@ int dsi_display_set_power(struct drm_connector *connector,
 	struct dsi_display *display = disp;
 	int rc = 0;
 #ifdef CONFIG_MACH_XIAOMI_MOJITO
-	struct drm_notify_data notify_data;
+	struct msm_drm_notifier notify_data;
 	struct drm_device *dev = NULL;
 	int event = 0;
 #endif
@@ -1295,24 +1295,24 @@ int dsi_display_set_power(struct drm_connector *connector,
 	case SDE_MODE_DPMS_LP1:
 #ifdef CONFIG_MACH_XIAOMI_MOJITO
 		pr_err("SDE_MODE_DPMS_LP1\n");
-		event = DRM_BLANK_POWERDOWN;
+		event = MSM_DRM_BLANK_POWERDOWN;
 		notify_data.data = &event;
-		drm_notifier_call_chain(DRM_EARLY_EVENT_BLANK, &notify_data);
+		msm_drm_notifier_call_chain(MSM_DRM_EARLY_EVENT_BLANK, &notify_data);
 #endif
 		rc = dsi_panel_set_lp1(display->panel);
 #ifdef CONFIG_MACH_XIAOMI_MOJITO
 		if (!rc)
 			dsi_panel_set_doze_backlight(display);
-		drm_notifier_call_chain(DRM_EVENT_BLANK, &notify_data);
+		msm_drm_notifier_call_chain(MSM_DRM_EVENT_BLANK, &notify_data);
 #endif
 		break;
 	case SDE_MODE_DPMS_LP2:
 #ifdef CONFIG_MACH_XIAOMI_MOJITO
-		drm_notifier_call_chain(DRM_EARLY_EVENT_BLANK, &notify_data);
+		msm_drm_notifier_call_chain(MSM_DRM_EARLY_EVENT_BLANK, &notify_data);
 #endif
 		rc = dsi_panel_set_lp2(display->panel);
 #ifdef CONFIG_MACH_XIAOMI_MOJITO
-		drm_notifier_call_chain(DRM_EVENT_BLANK, &notify_data);
+		msm_drm_notifier_call_chain(MSM_DRM_EVENT_BLANK, &notify_data);
 #endif
 		break;
 	case SDE_MODE_DPMS_ON:
@@ -1320,11 +1320,11 @@ int dsi_display_set_power(struct drm_connector *connector,
 			display->panel->power_mode == SDE_MODE_DPMS_LP2) {
 #ifdef CONFIG_MACH_XIAOMI_MOJITO
 			pr_err("SDE_MODE_DPMS_ON\n");
-			drm_notifier_call_chain(DRM_EARLY_EVENT_BLANK, &notify_data);
+			msm_drm_notifier_call_chain(MSM_DRM_EARLY_EVENT_BLANK, &notify_data);
 #endif
 			rc = dsi_panel_set_nolp(display->panel);
 #ifdef CONFIG_MACH_XIAOMI_MOJITO
-			drm_notifier_call_chain(DRM_EVENT_BLANK, &notify_data);
+			msm_drm_notifier_call_chain(MSM_DRM_EVENT_BLANK, &notify_data);
 #endif
 		}
 		break;
@@ -1335,9 +1335,9 @@ int dsi_display_set_power(struct drm_connector *connector,
 		    dev->pre_state != SDE_MODE_DPMS_LP2)
 			break;
 
-		drm_notifier_call_chain(DRM_EARLY_EVENT_BLANK, &notify_data);
+		msm_drm_notifier_call_chain(MSM_DRM_EARLY_EVENT_BLANK, &notify_data);
 		rc = dsi_panel_set_nolp(display->panel);
-		drm_notifier_call_chain(DRM_EVENT_BLANK, &notify_data);
+		msm_drm_notifier_call_chain(MSM_DRM_EVENT_BLANK, &notify_data);
 #endif
 		return rc;
 	}
