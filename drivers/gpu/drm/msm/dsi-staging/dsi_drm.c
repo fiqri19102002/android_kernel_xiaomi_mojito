@@ -18,7 +18,6 @@
 #include <drm/drm_atomic.h>
 #ifdef CONFIG_MACH_XIAOMI_MOJITO
 #include <linux/msm_drm_notify.h>
-#include <linux/notifier.h>
 #include <drm/drm_bridge.h>
 #include <linux/pm_wakeup.h>
 #endif
@@ -37,10 +36,6 @@
 #define DEFAULT_PANEL_JITTER_ARRAY_SIZE		2
 #define DEFAULT_PANEL_PREFILL_LINES	25
 
-#ifdef CONFIG_MACH_XIAOMI_MOJITO
-static BLOCKING_NOTIFIER_HEAD(drm_notifier_list);
-#endif
-
 static struct dsi_display_mode_priv_info default_priv_info = {
 	.panel_jitter_numer = DEFAULT_PANEL_JITTER_NUMERATOR,
 	.panel_jitter_denom = DEFAULT_PANEL_JITTER_DENOMINATOR,
@@ -56,41 +51,8 @@ static struct delayed_work prim_panel_work;
 static atomic_t prim_panel_is_on;
 static struct wakeup_source prim_panel_wakelock;
 
-struct drm_notify_data notify_data;
+struct msm_drm_notifier notify_data;
 extern char *saved_command_line;
-
-/*
- *	drm_register_client - register a client notifier
- *	@nb:notifier block to callback when event happen
- */
-int drm_register_client(struct notifier_block *nb)
-{
-	pr_err("%s,%d\n",__func__,__LINE__);
-	return blocking_notifier_chain_register(&drm_notifier_list, nb);
-}
-EXPORT_SYMBOL(drm_register_client);
-
-/*
- *	drm_unregister_client - unregister a client notifier
- *	@nb:notifier block to callback when event happen
- */
-int drm_unregister_client(struct notifier_block *nb)
-{
-	pr_err("%s,%d\n",__func__,__LINE__);
-	return blocking_notifier_chain_unregister(&drm_notifier_list, nb);
-}
-EXPORT_SYMBOL(drm_unregister_client);
-
-/*
- *	drm_notifier_call_chain - notify clients of drm_event
- *
- */
-int drm_notifier_call_chain(unsigned long val, void *v)
-{
-	pr_err("%s,%d,val = %d\n",__func__,__LINE__,val);
-	return blocking_notifier_call_chain(&drm_notifier_list, val, v);
-}
-EXPORT_SYMBOL(drm_notifier_call_chain);
 #endif
 
 static void convert_to_dsi_mode(const struct drm_display_mode *drm_mode,
@@ -232,8 +194,8 @@ static void dsi_bridge_pre_enable(struct drm_bridge *bridge)
 	int event = 0;
 
 	/* add for thermal begin */
-	if (dev->doze_state == DRM_BLANK_POWERDOWN) {
-		dev->doze_state = DRM_BLANK_UNBLANK;
+	if (dev->doze_state == MSM_DRM_BLANK_POWERDOWN) {
+		dev->doze_state = MSM_DRM_BLANK_UNBLANK;
 		pr_err("%s power on from power off\n", __func__);
 	}
 	event = dev->doze_state;
@@ -261,7 +223,7 @@ static void dsi_bridge_pre_enable(struct drm_bridge *bridge)
 	}
 
 	/* add for thermal begin */
-	drm_notifier_call_chain(DRM_EARLY_EVENT_BLANK, &notify_data);
+	msm_drm_notifier_call_chain(MSM_DRM_EARLY_EVENT_BLANK, &notify_data);
 	/* add for thermal end */	
 #endif
 
@@ -301,7 +263,7 @@ static void dsi_bridge_pre_enable(struct drm_bridge *bridge)
 
 #ifdef CONFIG_MACH_XIAOMI_MOJITO
 	/* add for thermal begin */
-	drm_notifier_call_chain(DRM_EVENT_BLANK, &notify_data);
+	msm_drm_notifier_call_chain(MSM_DRM_EVENT_BLANK, &notify_data);
 	/* add for thermal end */
 #endif
 
@@ -551,8 +513,8 @@ static void dsi_bridge_post_disable(struct drm_bridge *bridge)
 	int event = 0;
 
 	/* add for thermal begin */
-	if (dev->doze_state == DRM_BLANK_UNBLANK) {
-		dev->doze_state = DRM_BLANK_POWERDOWN;
+	if (dev->doze_state == MSM_DRM_BLANK_UNBLANK) {
+		dev->doze_state = MSM_DRM_BLANK_POWERDOWN;
 		pr_err("%s wrong doze state\n", __func__);
 	}
 	event = dev->doze_state;
@@ -567,7 +529,7 @@ static void dsi_bridge_post_disable(struct drm_bridge *bridge)
 
 #ifdef CONFIG_MACH_XIAOMI_MOJITO
 	/* add for thermal begin */
-	drm_notifier_call_chain(DRM_EARLY_EVENT_BLANK, &notify_data);
+	msm_drm_notifier_call_chain(MSM_DRM_EARLY_EVENT_BLANK, &notify_data);
 	/* add for thermal end */
 #endif
 
@@ -593,7 +555,7 @@ static void dsi_bridge_post_disable(struct drm_bridge *bridge)
 
 #ifdef CONFIG_MACH_XIAOMI_MOJITO
 	/* add for thermal begin */
-	drm_notifier_call_chain(DRM_EVENT_BLANK, &notify_data);
+	msm_drm_notifier_call_chain(MSM_DRM_EVENT_BLANK, &notify_data);
 	/* add for thermal end */
 
 	if (c_bridge->display->is_prim_display)
