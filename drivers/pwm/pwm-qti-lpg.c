@@ -1197,7 +1197,11 @@ static int qpnp_lpg_pwm_enable(struct pwm_chip *pwm_chip,
 		}
 	}
 
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	rc = qpnp_lpg_set_glitch_removal(lpg, false);
+#else
 	rc = qpnp_lpg_set_glitch_removal(lpg, true);
+#endif
 	if (rc < 0) {
 		dev_err(lpg->chip->dev, "Enable glitch-removal failed, rc=%d\n",
 							rc);
