@@ -713,6 +713,12 @@ ARCH_AFLAGS :=
 ARCH_CFLAGS :=
 include arch/$(SRCARCH)/Makefile
 
+ifeq ($(cc-name),clang)
+KBUILD_CFLAGS += -mcpu=cortex-a55 -mtune=cortex-a55
+else ifeq ($(cc-name),gcc)
+KBUILD_CFLAGS += -mtune=cortex-a76.cortex-a55 -march=armv8-a
+endif
+
 KBUILD_CFLAGS	+= $(call cc-option,-fno-delete-null-pointer-checks,)
 KBUILD_CFLAGS	+= $(call cc-disable-warning,frame-address,)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, format-truncation)
