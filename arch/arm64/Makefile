@@ -169,6 +169,10 @@ TEXT_OFFSET := 0x00080000
 endif
 
 ifeq ($(cc-name),clang)
+KBUILD_CFLAGS += -mcpu=cortex-a55 -mtune=cortex-a55
+endif
+
+ifeq ($(cc-name),clang)
 KBUILD_CFLAGS += $(call cc-disable-warning, asm-operand-widths)
 endif
 
