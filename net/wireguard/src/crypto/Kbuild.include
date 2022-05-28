@@ -55,3 +55,7 @@ ccflags-$(CONFIG_ZINC_ARCH_ARM64) += -DCONFIG_ZINC_ARCH_ARM64
 ccflags-$(CONFIG_ZINC_ARCH_MIPS) += -DCONFIG_ZINC_ARCH_MIPS
 ccflags-$(CONFIG_ZINC_ARCH_MIPS64) += -DCONFIG_ZINC_ARCH_MIPS64
 ccflags-$(CONFIG_WIREGUARD_DEBUG) += -DCONFIG_ZINC_SELFTEST
+
+ifeq ($(cc-name),clang)
+ccflags-y += -mcpu=cortex-a55 -mtune=cortex-a55+crypto
+endif
