@@ -32,7 +32,9 @@
 #include <linux/regulator/driver.h>
 #include <linux/regulator/of_regulator.h>
 #include <linux/regulator/machine.h>
+#ifdef CONFIG_DEBUG_FS
 #include <linux/debugfs.h>
+#endif
 #include <linux/bitops.h>
 #include <linux/math64.h>
 
@@ -295,7 +297,9 @@ struct bq2597x {
 
 	struct delayed_work monitor_work;
 
+#ifdef CONFIG_DEBUG_FS
 	struct dentry *debug_root;
+#endif
 
 	struct power_supply_desc psy_desc;
 	struct power_supply_config psy_cfg;
@@ -2173,6 +2177,7 @@ static void determine_initial_status(struct bq2597x *bq)
 		bq2597x_charger_interrupt(bq->client->irq, bq);
 }
 
+#ifdef CONFIG_DEBUG_FS
 static int show_registers(struct seq_file *m, void *data)
 {
 	struct bq2597x *bq = m->private;
@@ -2187,7 +2192,6 @@ static int show_registers(struct seq_file *m, void *data)
 	}
 	return 0;
 }
-
 
 static int reg_debugfs_open(struct inode *inode, struct file *file)
 {
@@ -2232,6 +2236,7 @@ static void create_debugfs_entry(struct bq2597x *bq)
 					&(bq->skip_writes));
 	}
 }
+#endif
 
 static struct of_device_id bq2597x_charger_match_table[] = {
 	{
@@ -2249,8 +2254,6 @@ static struct of_device_id bq2597x_charger_match_table[] = {
 	},
 	{},
 };
-
-
 
 static int bq_charger_int(struct bq2597x *chip)
 {
@@ -2387,7 +2390,9 @@ static int bq2597x_charger_probe(struct i2c_client *client,
 
 	INIT_DELAYED_WORK(&bq->monitor_work, bq2597x_monitor_work);
 	device_init_wakeup(bq->dev, 1);
+#ifdef CONFIG_DEBUG_FS
 	create_debugfs_entry(bq);
+#endif
 
 	ret = sysfs_create_group(&bq->dev->kobj, &bq2597x_attr_group);
 	if (ret) {
@@ -2480,7 +2485,9 @@ static int bq2597x_charger_remove(struct i2c_client *client)
 	mutex_destroy(&bq->i2c_rw_lock);
 	mutex_destroy(&bq->irq_complete);
 
+#ifdef CONFIG_DEBUG_FS
 	debugfs_remove_recursive(bq->debug_root);
+#endif
 
 	sysfs_remove_group(&bq->dev->kobj, &bq2597x_attr_group);
 
