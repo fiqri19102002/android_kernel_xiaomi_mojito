@@ -1008,25 +1008,27 @@ static int cam_cpas_hw_start(void *hw_priv, void *start_args,
 		goto done;
 	}
 
-	CAM_DBG(CAM_CPAS,
-		"AHB :client=[%d][%s][%d] type[%d], level[%d], applied[%d]",
-		client_indx, cpas_client->data.identifier,
-		cpas_client->data.cell_index,
-		ahb_vote->type, ahb_vote->vote.level, cpas_client->ahb_level);
 	rc = cam_cpas_util_apply_client_ahb_vote(cpas_hw, cpas_client,
 		ahb_vote, &applied_level);
-	if (rc)
+	if (rc) {
+		CAM_DBG(CAM_CPAS,
+			"AHB :client=[%d][%s][%d] type[%d], level[%d], applied[%d]",
+			client_indx, cpas_client->data.identifier,
+			cpas_client->data.cell_index,
+			ahb_vote->type, ahb_vote->vote.level, cpas_client->ahb_level);
 		goto done;
+	}
 
-	CAM_INFO(CAM_CPAS,
-		"AXI client=[%d][%s][%d] comp[%llu], comp_ab[%llu], uncomp[%llu]",
-		client_indx, cpas_client->data.identifier,
-		cpas_client->data.cell_index, axi_vote->compressed_bw,
-		axi_vote->compressed_bw_ab, axi_vote->uncompressed_bw);
 	rc = cam_cpas_util_apply_client_axi_vote(cpas_hw,
 		cpas_client, axi_vote);
-	if (rc)
+	if (rc) {
+		CAM_INFO(CAM_CPAS,
+			"AXI client=[%d][%s][%d] comp[%llu], comp_ab[%llu], uncomp[%llu]",
+			client_indx, cpas_client->data.identifier,
+			cpas_client->data.cell_index, axi_vote->compressed_bw,
+			axi_vote->compressed_bw_ab, axi_vote->uncompressed_bw);
 		goto done;
+	}
 
 	if (cpas_core->streamon_clients == 0) {
 		atomic_set(&cpas_core->irq_count, 1);
