@@ -2263,8 +2263,8 @@ static int __drm_mode_atomic_ioctl(struct drm_device *dev, void *data,
 				devfreq_boost_kick(DEVFREQ_CPU_LLCC_DDR_BW);
 			break;
 		case 3:
-			cpu_input_boost_kick_max(100);
-			devfreq_boost_kick_max(DEVFREQ_CPU_LLCC_DDR_BW, 100);
+			cpu_input_boost_kick();
+			devfreq_boost_kick(DEVFREQ_CPU_LLCC_DDR_BW);
 			break;
 		default:
 			break;
