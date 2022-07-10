@@ -56,6 +56,7 @@
 #include <linux/time.h>
 #include <linux/jiffies.h>
 #include <linux/fs.h>
+#include <linux/pm_qos.h>
 #include <linux/proc_fs.h>
 #include <linux/version.h>
 #include <linux/types.h>
@@ -63,6 +64,8 @@
 #include <linux/kthread.h>
 #include <linux/dma-mapping.h>
 #include "focaltech_common.h"
+
+#include <linux/i2c-qcom-geni.h>
 
 #ifdef CONFIG_TOUCHSCREEN_XIAOMI_TOUCHFEATURE
 #include "../xiaomi/xiaomi_touch.h"
@@ -231,6 +234,8 @@ struct fts_ts_data {
 	struct mutex reg_lock;
 	struct device *fts_touch_dev;
 	struct class *fts_tp_class;
+	struct pm_qos_request pm_i2c_req;
+	struct pm_qos_request pm_touch_req;
 };
 
 enum _FTS_BUS_TYPE {

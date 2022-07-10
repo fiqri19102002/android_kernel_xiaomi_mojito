@@ -654,7 +654,14 @@ static irqreturn_t fts_irq_handler(int irq, void *data)
     }
 #endif
 
+    pm_qos_update_request(&ts_data->pm_touch_req, 100);
+    pm_qos_update_request(&ts_data->pm_i2c_req, 100);
+
     fts_irq_read_report();
+
+    pm_qos_update_request(&ts_data->pm_touch_req, PM_QOS_DEFAULT_VALUE);
+    pm_qos_update_request(&ts_data->pm_i2c_req, PM_QOS_DEFAULT_VALUE);
+
     return IRQ_HANDLED;
 }
 
@@ -1940,6 +1947,17 @@ static int fts_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
         return -ENOMEM;
     }
 
+    ts_data->pm_i2c_req.type = PM_QOS_REQ_AFFINE_IRQ;
+    ts_data->pm_i2c_req.irq = geni_i2c_get_adap_irq(client);
+    irq_set_perf_affinity(ts_data->pm_i2c_req.irq, IRQF_PERF_AFFINE);
+    pm_qos_add_request(&ts_data->pm_i2c_req, PM_QOS_CPU_DMA_LATENCY,
+            PM_QOS_DEFAULT_VALUE);
+
+    ts_data->pm_touch_req.type = PM_QOS_REQ_AFFINE_IRQ;
+    ts_data->pm_touch_req.irq = client->irq;
+    pm_qos_add_request(&ts_data->pm_touch_req, PM_QOS_CPU_DMA_LATENCY,
+            PM_QOS_DEFAULT_VALUE);
+
     fts_data = ts_data;
     ts_data->client = client;
     ts_data->dev = &client->dev;
@@ -1951,6 +1969,8 @@ static int fts_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
     ret = fts_ts_probe_entry(ts_data);
     if (ret) {
         FTS_ERROR("Touch Screen(I2C BUS) driver probe fail");
+        pm_qos_remove_request(&ts_data->pm_touch_req);
+        pm_qos_remove_request(&ts_data->pm_i2c_req);
         kfree_safe(ts_data);
         return ret;
     }
