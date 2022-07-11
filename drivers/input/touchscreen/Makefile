@@ -7,11 +7,6 @@
 
 wm97xx-ts-y := wm97xx-core.o
 
-obj-$(CONFIG_XIAOMI_COMMON_TOUCHSCREEN)	+= lct_tp_info.o
-obj-$(CONFIG_XIAOMI_COMMON_TOUCHSCREEN)	+= lct_tp_selftest.o
-obj-$(CONFIG_XIAOMI_COMMON_TOUCHSCREEN)	+= lct_tp_gesture.o
-obj-$(CONFIG_XIAOMI_COMMON_TOUCHSCREEN)	+= lct_tp_palm.o
-obj-$(CONFIG_XIAOMI_COMMON_TOUCHSCREEN)	+= lct_tp_grip_area.o
 obj-$(CONFIG_XIAOMI_COMMON_TOUCHSCREEN)	+= xiaomi/
 obj-$(CONFIG_TOUCHSCREEN_FT3418_I2C)	+= ft3418_i2c/
 obj-$(CONFIG_TOUCHSCREEN_PROPERTIES)	+= of_touchscreen.o
