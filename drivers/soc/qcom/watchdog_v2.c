@@ -861,8 +861,12 @@ static int msm_wdog_dt_to_pdata(struct platform_device *pdev,
 								__func__);
 		return -ENXIO;
 	}
+#ifdef CONFIG_MACH_XIAOMI_MOJITO
+	pdata->wakeup_irq_enable = false;
+#else
 	pdata->wakeup_irq_enable = of_property_read_bool(node,
 							 "qcom,wakeup-enable");
+#endif
 
 	num_scandump_sizes = of_property_count_elems_of_size(node,
 							"qcom,scandump-sizes",
