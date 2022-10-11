@@ -534,7 +534,7 @@ static ssize_t compatible_all_set(struct device *dev,
 		rc = select_pin_ctl(fpc1020, "fpc1020_irq_active");
 		if (rc)
 			goto exit;
-		irqf = IRQF_TRIGGER_RISING | IRQF_ONESHOT;
+		irqf = IRQF_TRIGGER_RISING | IRQF_ONESHOT | IRQF_LITTLE_AFFINE;
 		if (of_property_read_bool(dev->of_node, "fpc,enable-wakeup")) {
 			irqf |= IRQF_NO_SUSPEND;
 			device_init_wakeup(dev, 1);
@@ -705,7 +705,7 @@ static int fpc1020_probe(struct platform_device *pdev)
 
 	atomic_set(&fpc1020->wakeup_enabled, 1);
 
-	irqf = IRQF_TRIGGER_RISING | IRQF_ONESHOT;
+	irqf = IRQF_TRIGGER_RISING | IRQF_ONESHOT | IRQF_LITTLE_AFFINE;
 	if (of_property_read_bool(dev->of_node, "fpc,enable-wakeup")) {
 		irqf |= IRQF_NO_SUSPEND;
 		device_init_wakeup(dev, 1);
