@@ -487,9 +487,7 @@ static DEVICE_ATTR(irq, S_IRUSR | S_IWUSR, irq_get, irq_ack);
 static ssize_t compatible_all_set(struct device *dev,
 	struct device_attribute *attr, const char *buf, size_t count)
 {
-	int rc;
-	int i;
-	int irqf;
+	int i, rc;
 	struct  fpc1020_data *fpc1020 = dev_get_drvdata(dev);
 	dev_err(dev, "compatible all enter %d\n", fpc1020->compatible_enabled);
 	if(!strncmp(buf, "enable", strlen("enable")) && fpc1020->compatible_enabled != 1){
@@ -534,14 +532,13 @@ static ssize_t compatible_all_set(struct device *dev,
 		rc = select_pin_ctl(fpc1020, "fpc1020_irq_active");
 		if (rc)
 			goto exit;
-		irqf = IRQF_TRIGGER_RISING | IRQF_ONESHOT | IRQF_LITTLE_AFFINE;
-		if (of_property_read_bool(dev->of_node, "fpc,enable-wakeup")) {
-			irqf |= IRQF_NO_SUSPEND;
+
+		if (of_property_read_bool(dev->of_node, "fpc,enable-wakeup"))
 			device_init_wakeup(dev, 1);
-		}
+
 		rc = devm_request_threaded_irq(dev, gpio_to_irq(fpc1020->irq_gpio),
-			NULL, fpc1020_irq_handler, irqf,
-			dev_name(dev), fpc1020);
+			NULL, fpc1020_irq_handler, IRQF_TRIGGER_RISING | IRQF_ONESHOT |
+			IRQF_LITTLE_AFFINE, dev_name(dev), fpc1020);
 		if (rc) {
 			dev_err(dev, "could not request irq %d\n",
 				gpio_to_irq(fpc1020->irq_gpio));
@@ -639,7 +636,6 @@ static int fpc1020_probe(struct platform_device *pdev)
 	int rc = 0;
 #ifndef CONFIG_FPC_COMPAT
 	size_t i;
-	int irqf;
 #endif
 	struct device_node *np = dev->of_node;
 	struct fpc1020_data *fpc1020 = devm_kzalloc(dev, sizeof(*fpc1020),
@@ -705,16 +701,13 @@ static int fpc1020_probe(struct platform_device *pdev)
 
 	atomic_set(&fpc1020->wakeup_enabled, 1);
 
-	irqf = IRQF_TRIGGER_RISING | IRQF_ONESHOT | IRQF_LITTLE_AFFINE;
-	if (of_property_read_bool(dev->of_node, "fpc,enable-wakeup")) {
-		irqf |= IRQF_NO_SUSPEND;
+	if (of_property_read_bool(dev->of_node, "fpc,enable-wakeup"))
 		device_init_wakeup(dev, 1);
-	}
 
 	rt_mutex_init(&fpc1020->lock);
 	rc = devm_request_threaded_irq(dev, gpio_to_irq(fpc1020->irq_gpio),
-			NULL, fpc1020_irq_handler, irqf,
-			dev_name(dev), fpc1020);
+			NULL, fpc1020_irq_handler, IRQF_TRIGGER_RISING | IRQF_ONESHOT |
+			IRQF_LITTLE_AFFINE, dev_name(dev), fpc1020);
 	if (rc) {
 		dev_err(dev, "could not request irq %d\n",
 				gpio_to_irq(fpc1020->irq_gpio));
