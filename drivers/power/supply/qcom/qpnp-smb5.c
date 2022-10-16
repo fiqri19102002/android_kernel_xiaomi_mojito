@@ -3930,18 +3930,27 @@ static void thermal_fb_notifier_resume_work(struct work_struct *work)
 /* frame buffer notifier block control the suspend/resume procedure */
 static int thermal_notifier_callback(struct notifier_block *noti, unsigned long event, void *data)
 {
-	struct fb_event *ev_data = data;
+	struct msm_drm_notifier *ev_data = data;
 	struct smb_charger *chg = container_of(noti, struct smb_charger, notifier);
 	int *blank;
+
 	if (ev_data && ev_data->data && chg) {
 		blank = ev_data->data;
-		if (event == MSM_DRM_EARLY_EVENT_BLANK && *blank == MSM_DRM_BLANK_UNBLANK) {
-			lct_backlight_off = false;
-			schedule_work(&chg->fb_notify_work);
-		}
-		else if (event == MSM_DRM_EVENT_BLANK && *blank == MSM_DRM_BLANK_POWERDOWN) {
-			lct_backlight_off = true;
-			schedule_work(&chg->fb_notify_work);
+		switch (*blank) {
+		case MSM_DRM_BLANK_UNBLANK:
+			if (event == MSM_DRM_EARLY_EVENT_BLANK) {
+				lct_backlight_off = false;
+				schedule_work(&chg->fb_notify_work);
+			}
+			break;
+		case MSM_DRM_BLANK_POWERDOWN:
+			if (event == MSM_DRM_EVENT_BLANK) {
+				lct_backlight_off = true;
+				schedule_work(&chg->fb_notify_work);
+			}
+			break;
+		default:
+			break;
 		}
 	}
 
