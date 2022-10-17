@@ -263,8 +263,18 @@ int fts_gesture_suspend(struct fts_ts_data *ts_data);
 int fts_gesture_resume(struct fts_ts_data *ts_data);
 
 /* Apk and functions */
+#ifdef CONFIG_DEBUG_KERNEL
 int fts_create_apk_debug_channel(struct fts_ts_data *);
 void fts_release_apk_debug_channel(struct fts_ts_data *);
+#else
+static inline int fts_create_apk_debug_channel(struct fts_ts_data *ts_data)
+{ 
+    return 0; 
+}
+static inline void fts_release_apk_debug_channel(struct fts_ts_data *ts_data)
+{
+}
+#endif
 
 /* ADB functions */
 int fts_create_sysfs(struct fts_ts_data *ts_data);
