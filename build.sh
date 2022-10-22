@@ -142,10 +142,10 @@ compile() {
 	fi
 	BUILD_END=$(date +"%s")
 	DIFF=$((BUILD_END - BUILD_START))
-	if [ -f "$IMG_DIR"/Image.gz-dtb ] 
+	if [ -f "$IMG_DIR"/Image ] 
 	then
 		echo -e "Kernel successfully compiled"
-	elif ! [ -f "$IMG_DIR"/Image.gz-dtb ]
+	elif ! [ -f "$IMG_DIR"/Image ]
 	then
 		echo -e "Kernel compilation failed"
 		tg_post_msg "<b>Build failed to compile after $((DIFF / 60)) minute(s) and $((DIFF % 60)) seconds</b>"
@@ -156,7 +156,9 @@ compile() {
 # Set function for zipping into a flashable zip
 gen_zip() {
 	# Move kernel image to AnyKernel3
-	mv "$IMG_DIR"/Image.gz-dtb AnyKernel3/Image.gz-dtb
+	cat "$IMG_DIR"/dts/qcom/sm6150.dtb > AnyKernel3/dtb
+	mv "$IMG_DIR"/dtbo.img AnyKernel3/dtbo.img
+	mv "$IMG_DIR"/Image AnyKernel3/Image
 	cd AnyKernel3 || exit
 
 	# Archive to flashable zip
