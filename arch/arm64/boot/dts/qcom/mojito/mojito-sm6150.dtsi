@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+#include "mojito-sm6150-audio.dtsi"
+#include "mojito-sm6150-battery.dtsi"
+#include "mojito-sm6150-camera.dtsi"
+#include "mojito-sm6150-display.dtsi"
+#include "mojito-sm6150-fp.dtsi"
+#include "mojito-sm6150-ir.dtsi"
+#include "mojito-sm6150-led.dtsi"
+#include "mojito-sm6150-memory.dtsi"
+#include "mojito-sm6150-pinctrl.dtsi"
+#include "mojito-sm6150-pm6150.dtsi"
+#include "mojito-sm6150-thermal.dtsi"
+#include "mojito-sm6150-touchscreen.dtsi"
+#include "mojito-sm6150-usb.dtsi"
+#include "mojito-sm6150-vibrator.dtsi"
+
+&sdhc_2 {
+	cd-gpios = <&tlmm 99 0>;
+};

@@ -1,0 +1,185 @@
+/*
+ * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+&mtp_batterydata {
+	/delete-node/ qcom,alium_860_89032_0000_3600mAh;
+	/delete-node/ qcom,mlp356477_2800mah;
+
+	#include "battery/batterydata-M305-sunwoda-5000mah.dtsi"
+	#include "battery/batterydata-M305-nvt-5000mah.dtsi"
+};
+
+&pm6150_qg {
+	qcom,qg-iterm-ma = <350>;
+	qcom,tcss-enable;
+	qcom,vbatt-cutoff-mv = <3400>;
+	qcom,vbatt-low-mv = <3500>;
+	qcom,vbatt-low-cold-mv = <3700>;
+	qcom,vbatt-empty-mv = <3000>;
+	qcom,vbatt-empty-cold-mv = <3000>;
+	qcom,s3-entry-ibat-ua = <25000>;
+	qcom,s3-exit-ibat-ua = <45000>;
+	qcom,s3-entry-fifo-length = <2>;
+	qcom,qg-vadc = <&pm6150_vadc>;
+	qcom,qg-ext-sns;
+	mi,software-optimize-ffc-qg-iterm;
+	qcom,soc_decimal_rate = <
+		0  32
+		10 30
+		20 28
+		30 28
+		40 28
+		50 28
+		60 28
+		70 28
+		80 28
+		90 26
+		95 10
+		99 5>;
+	qcom,qg-fast-chg-config;
+};
+
+&pm6150_charger {
+	/delete-property/ qcom,step-charging-enable;
+	/delete-property/ qcom,fcc-stepping-enable;
+
+	qcom,usb-icl-ua = <3000000>;
+	qcom,auto-recharge-soc = <99>;
+	qcom,fcc-max-ua = <6000000>;
+	qcom,fv-max-uv = <4470000>;
+	qcom,chg-term-src = <1>;
+	qcom,chg-term-current-ma = <(-200)>;
+	qcom,sec-charger-config = <0>;
+	qcom,thermal-mitigation = <6000000 5500000 4900000 4600000 4500000 4400000 4200000
+				   3800000 3800000 3600000 3400000 3200000 3000000 2200000
+				   800000 300000>;
+	qcom,fcc-step-delay-ms = <100>;
+	qcom,fcc-step-size-ua = <100000>;
+	qcom,disable-sw-thermal-regulation;
+	qcom,disable-fcc-restriction;
+	qcom,smb-internal-pull-kohm = <0>;
+	qcom,usbpd-phandle = <&pm6150_pdphy>;
+	mi,support-ffc;
+	mi,six-pin-step-chg-params = <4250000 6000000
+				4450000 5400000
+				4470000 3900000>;
+	mi,six-pin-step-chg-params_2 = <4250000 6000000
+				4450000 5400000
+				4470000 3900000>;
+	mi,six-pin-step-chg;
+	mi,use-bq-pump;
+	qcom,distinguish-qc-class-ab;
+	qcom,disable-suspend-on-collapse;
+	/* mi,swithc-sel-gpio = <&tlmm 94 0>; */
+	qcom,lpd-disable;
+};
+
+&pm6150_pdphy {
+	mi,non-qcom-pps-ctrl;
+	mi,pd_curr_limit = <1>;
+	mi,pd_max_curr_limit = <4000000>;
+	mi,limit_pd_unverified_pps_vbus = <1>;
+	mi,pd_unverified_pps_max_vbus_limit = <9500000>;
+};
+
+&qupv3_se3_i2c {
+	status = "ok";
+
+	bq2597x-charger@65 {
+		compatible = "ti,bq2597x-standalone";
+		reg = <0x65>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <41 2>;
+		pinctrl-names = "bq_charger_active", "bq_charger_suspend";
+		pinctrl-0 = <&bq_charger_int_active>;
+		pinctrl-1 = <&bq_charger_int_suspend>;
+
+		/*ti,bq2597x,bat-ovp-disable;*/
+		ti,bq2597x,bat-ovp-alarm-disable;
+		ti,bq2597x,bat-ocp-disable;
+		ti,bq2597x,bat-ocp-alarm-disable;
+		ti,bq2597x,bat-ucp-alarm-disable;
+		ti,bq2597x,bat-ucp-disable;
+
+		/*ti,bq2597x,bus-ovp-alarm-disable;
+		ti,bq2597x,bus-ocp-disable;
+		ti,bq2597x,bus-ocp-alarm-disable;*/
+		ti,bq2597x,bat-therm-disable;
+		ti,bq2597x,bus-therm-disable;
+		ti,bq2597x,die-therm-disable;
+
+		ti,bq2597x,bat-ovp-threshold = <4550>;
+		ti,bq2597x,bat-ovp-alarm-threshold = <4450>;
+		//ti,bq2597x,bat-ocp-threshold = <5000>;
+		//ti,bq2597x,bat-ocp-alarm-threshold = <4500>;
+
+		ti,bq2597x,bus-ovp-threshold = <12000>;
+		ti,bq2597x,bus-ovp-alarm-threshold = <11000>;
+		//ti,bq2597x,bus-ocp-threshold = <2200>;
+		//ti,bq2597x,bus-ocp-alarm-threshold = <2000>;
+		ti,bq2597x,bus-ocp-threshold = <3750>;
+		ti,bq2597x,bus-ocp-alarm-threshold = <3550>;
+
+		//ti,bq2597x,bat-ucp-alarm-threshold = <2000>;
+
+		ti,bq2597x,bat-therm-threshold = <0x15>;/*4.1%*/
+		ti,bq2597x,bus-therm-threshold = <0x15>;/*4.1%*/
+		ti,bq2597x,die-therm-threshold = <145>;
+		ti,bq2597x,ac-ovp-threshold = <14>;
+		//ti,bq2597x,sense-resistor-mohm = <2>; 
+	};
+};
+
+&soc {
+	onewire_gpio: onewire_gpio {
+		compatible = "xiaomi,onewire_gpio";
+		label = "xm_onewire";
+		xiaomi,version = <1>;
+		xiaomi,ow_gpio = <&tlmm 108  0x00>;
+		xiaomi,gpio_number = <108>;
+		mi,onewire-gpio-cfg-addr = <0x03D6C000 0x4>;
+		pinctrl-names = "onewire_active", "onewire_sleep";
+		pinctrl-0 = <&onewire_gpio_active>;
+		pinctrl-1 = <&onewire_gpio_sleep>;
+		status = "ok";
+	};
+
+	maxim_ds28e16: maxim_ds28e16 {
+		compatible = "maxim,ds28e16";
+		label = "max_ds28e16";
+		maxim,version = <1>;
+		status = "ok";
+	};
+};
+
+&qupv3_se3_i2c {
+	/delete-node/ smb1355;
+	/delete-node/ smb1390;
+};
+
+&smb1390 {
+	status = "disabled";
+};
+
+&smb1390_charger {
+	status = "disabled";
+};
+
+&smb1355 {
+	status = "disabled";
+};
+
+&smb1355_charger {
+	status = "disabled";
+};

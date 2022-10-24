@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+&soc {
+	fpc1020 {
+		status = "ok";
+		compatible = "fpc,fpc1020";
+		interrupt-parent = <&tlmm>;
+		interrupts = <93 0x0>;
+		fpc,gpio_rst    = <&tlmm 109 0x0>;
+		fpc,gpio_irq    = <&tlmm 93 0x0>;
+		vcc_spi-supply  = <&pm6150l_l7>;
+		vdd_io-supply   = <&pm6150l_l7>;
+		vdd_ana-supply  = <&pm6150l_l7>;
+		/* fpc,enable-on-boot; */
+		/* fpc,enable-wakeup; */
+
+		pinctrl-names = "fpc1020_reset_reset",
+			"fpc1020_reset_active",
+			"fpc1020_irq_active";
+
+		pinctrl-0 = <&msm_gpio_109>;
+		pinctrl-1 = <&msm_gpio_109_output_high>;
+		pinctrl-2 = <&msm_gpio_93>;
+	};
+};

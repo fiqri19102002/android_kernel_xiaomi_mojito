@@ -240,6 +240,10 @@ dtb-$(CONFIG_ARCH_SDMSHRIKE)	+= sdmshrike-rumi.dtb \
 endif
 
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
+ifeq ($(CONFIG_MACH_XIAOMI_MOJITO),y)
+	dtbo-y += mojito-sm6150-overlay.dtbo
+mojito-sm6150-overlay.dtbo-base := sm6150.dtb
+else
 	dtbo-$(CONFIG_ARCH_SM6150) += \
 		sm6150-rumi-overlay.dtbo \
 		sm6150-qrd-overlay.dtbo \
@@ -256,6 +260,7 @@ sm6150-external-codec-idp-overlay.dtbo-base := sm6150.dtb
 sm6150-usbc-idp-overlay.dtbo-base := sm6150.dtb
 sm6150-usbc-minidp-idp-overlay.dtbo-base := sm6150.dtb
 sm6150-cmd-mode-display-idp-overlay.dtbo-base := sm6150.dtb
+endif
 else
 dtb-$(CONFIG_ARCH_SM6150)	+= sm6150-rumi.dtb \
 	sm6150-qrd.dtb \

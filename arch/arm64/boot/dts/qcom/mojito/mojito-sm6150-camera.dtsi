@@ -1,0 +1,234 @@
+/*
+ * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+&qupv3_se3_i2c {
+	status = "ok";
+	/*qcom,clk-freq-out = <100000>;*/
+	wl2866d@28 {
+		compatible = "longcheer,wl2866d";
+		reg = <0x28>;
+		vin1-supply = <&pm6150l_s8>;
+		vin1-voltage-level = <1350000  1350000>;
+		vin2-supply = <&pm6150l_bob>;
+		vin2-voltage-level = <3300000  3300000>;
+		en-gpio =  <&pm6150l_gpios 3 0>;
+		status = "ok";
+	};
+};
+
+&eeprom_rear {
+	/delete-property/ cam_vdig-supply;
+
+	regulator-names = "cam_vio", "cam_vana", "cam_clk", "cam_vaf";
+	rgltr-min-voltage = <1800000 2850000 0 2800000>;
+	rgltr-max-voltage = <1800000 2850000 0 2800000>;
+	rgltr-load-current = <0 80000 0 100000>;
+	clock-rates = <19200000>;
+};
+
+&soc {
+	/delete-node/ camera_ldo;
+	/delete-node/ eeprom_rear_aux;
+	/delete-node/ eeprom_triple_rear_aux;
+	/delete-node/ qcom,cam-sensor@5;
+	/delete-node/ qcom,cam-sensor@6;
+
+	eeprom_ultra_rear_aux: qcom,eeprom@3 {
+		cell-index = <3>;
+		reg = <3>;
+		compatible = "qcom,eeprom";
+		cam_vio-supply = <&pm6150_l13>;
+		//cam_vana-supply = <&camera_vana0_ldo>;
+		cam_clk-supply = <&titan_top_gdsc>;
+		regulator-names = "cam_vio",
+			"cam_clk";
+		rgltr-cntrl-support;
+		rgltr-min-voltage = <1800000 0>;
+		rgltr-max-voltage = <1800000 0>;
+		rgltr-load-current = <105000 0>;
+		gpio-no-mux = <0>;
+		pinctrl-names = "cam_default", "cam_suspend";
+		pinctrl-0 = <&cam_sensor_mclk3_active
+				&cam_sensor_rear3_active>;
+		pinctrl-1 = <&cam_sensor_mclk3_suspend
+				&cam_sensor_rear3_suspend>;
+		gpios = <&tlmm 31 0>,
+			<&tlmm 40 0>;
+		gpio-reset = <1>;
+		gpio-req-tbl-num = <0 1>;
+		gpio-req-tbl-flags = <1 0>;
+		gpio-req-tbl-label = "CAMIF_MCLK3",
+					"CAM_RESET3";
+		sensor-mode = <0>;
+		cci-master = <1>;
+		status = "ok";
+		clocks = <&clock_camcc CAM_CC_MCLK3_CLK>;
+		clock-names = "cam_clk";
+		clock-cntl-level = "turbo";
+		clock-rates = <19200000>;
+	};
+
+	eeprom_rear_macro: qcom,eeprom@4 {
+		cell-index = <4>;
+		reg = <4>;
+		compatible = "qcom,eeprom";
+		cam_vio-supply = <&camera_vana1_2_ldo>;
+		cam_clk-supply = <&titan_top_gdsc>;
+		regulator-names = "cam_vio",
+			"cam_clk";
+		rgltr-cntrl-support;
+		rgltr-min-voltage = <2850000 0>;
+		rgltr-max-voltage = <2850000 0>;
+		rgltr-load-current = <0 0>;
+		gpio-no-mux = <0>;
+		pinctrl-names = "cam_default", "cam_suspend";
+		pinctrl-0 = <&cam_sensor_mclk1_active
+				&cam_sensor_rear2_active>;
+		pinctrl-1 = <&cam_sensor_mclk1_suspend
+				&cam_sensor_rear2_suspend>;
+		gpios = <&tlmm 29 0>,
+			<&tlmm 45 0>;
+		gpio-reset = <1>;
+		gpio-req-tbl-num = <0 1>;
+		gpio-req-tbl-flags = <1 0>;
+		gpio-req-tbl-label = "CAMIF_MCLK1",
+					"CAM_RESET2";
+		sensor-mode = <0>;
+		cci-master = <0>;
+		status = "ok";
+		clocks = <&clock_camcc CAM_CC_MCLK1_CLK>;
+		clock-names = "cam_clk";
+		clock-cntl-level = "turbo";
+		clock-rates = <19200000>;
+	};
+
+	qcom,cam-sensor@0 {
+		/delete-property/ ois-src;
+		/delete-property/ cam_vdig-supply;
+
+		regulator-names = "cam_vio", "cam_vana", "cam_clk";
+		rgltr-min-voltage = <1800000 2850000 0>;
+		rgltr-max-voltage = <1800000 2850000 0>;
+		rgltr-load-current = <0 80000 0>;
+		clock-rates = <19200000>;
+	};
+
+	qcom,cam-sensor@1 {
+		/delete-property/ led-flash-src;
+		/delete-property/ actuator-src;
+		/delete-property/ cam_vana-supply;
+
+		eeprom-src = <&eeprom_rear_aux_depth>;
+		cam_vio-supply = <&camera_vana1_2_ldo>;
+		regulator-names = "cam_vio",
+			"cam_clk";
+		rgltr-min-voltage = <2850000 0>;
+		rgltr-max-voltage = <2850000 0>;
+		rgltr-load-current = <0 0>;
+		pinctrl-0 = <&cam_sensor_mclk2_active
+				&cam_sensor_depth_active>;
+		pinctrl-1 = <&cam_sensor_mclk2_suspend
+				&cam_sensor_depth_suspend>;
+		gpios = <&tlmm 30 0>,
+			<&tlmm 37 0>;
+		gpio-req-tbl-label = "CAMIF_MCLK2",
+					"CAM_RESET_DEPTH";
+		clocks = <&clock_camcc CAM_CC_MCLK2_CLK>;
+		clock-rates = <19200000>;
+	};
+
+	qcom,cam-sensor@2 {
+		/delete-property/ actuator-src;
+		/delete-property/ led-flash-src;
+		/delete-property/ cam_vana-supply;
+		/delete-property/ cam_vdig-supply;
+
+		reg = <0x2>;
+		csiphy-sd-index = <1>;
+		eeprom-src = <&eeprom_front>;//eeprom
+		regulator-names = "cam_vio", "cam_clk";
+		rgltr-min-voltage = <1800000 0>;
+		rgltr-max-voltage = <1800000 0>;
+		rgltr-load-current = <0 0>;
+		gpios = <&tlmm 30 0>,
+			<&tlmm 38 0>,
+			<&tlmm 94 0>,
+			<&tlmm 121 0>;
+		gpio-custom1 = <2>;
+		gpio-custom2 = <3>;
+		gpio-req-tbl-num = <0 1 2 3>;
+		gpio-req-tbl-flags = <1 0 0 0>;
+		gpio-req-tbl-label = "CAMIF_MCLK2",
+					"CAM2_RST_N",
+					"CAM_SEL1_8V",
+					"CAM_OE_LOW";
+		clock-rates = <19200000>;
+	};
+
+	qcom,cam-sensor@3 {
+		/delete-property/ actuator-src;
+		/delete-property/ cam_vana-supply;
+		/delete-property/ cam_vdig-supply;
+
+		csiphy-sd-index = <1>;
+		led-flash-src = <&led_flash_rear>;
+		eeprom-src = <&eeprom_ultra_rear_aux>;
+		regulator-names = "cam_vio", "cam_clk";
+		rgltr-min-voltage = <1800000 0>;
+		rgltr-max-voltage = <1800000 0>;
+		rgltr-load-current = <105000 0>;
+		pinctrl-0 = <&cam_sensor_mclk3_active
+				&cam_sensor_rear3_active>;
+		pinctrl-1 = <&cam_sensor_mclk3_suspend
+				&cam_sensor_rear3_suspend>;
+		gpios = <&tlmm 31 0>,
+			<&tlmm 40 0>,
+			<&tlmm 94 0>,
+			<&tlmm 121 0>;
+		gpio-custom1 = <2>;
+		gpio-custom2 = <3>;
+		gpio-req-tbl-num = <0 1 2 3>;
+		gpio-req-tbl-flags = <1 0 0 0>;
+		gpio-req-tbl-label = "CAMIF_MCLK3",
+					"CAM_RESET3",
+					"CAM_SEL",
+					"CAM_OE";
+		clocks = <&clock_camcc CAM_CC_MCLK3_CLK>;
+		clock-rates = <19200000>;
+	};
+
+	qcom,cam-sensor@4 {
+		/delete-property/ actuator-src;
+		/delete-property/ cam_vana-supply;
+		/delete-property/ cam_vdig-supply;
+
+		csiphy-sd-index = <2>;
+		eeprom-src = <&eeprom_rear_macro>;
+		cam_vio-supply = <&camera_vana1_2_ldo>;
+		regulator-names = "cam_vio", "cam_clk";
+		rgltr-min-voltage = <2850000 0>;
+		rgltr-max-voltage = <2850000 0>;
+		rgltr-load-current = <0 0>;
+		gpio-req-tbl-label = "CAMIF_MCLK1",
+					"CAM_RESET2";
+		clock-rates = <19200000>;
+	};
+};
+
+&icp_iova_mem_map {
+	iova-mem-region-io {
+		/* IO region is approximately 3.4 GB */
+		iova-region-len = <0xD9900000>;
+	};
+};
