@@ -129,12 +129,7 @@ compile() {
 	if [[ $COMPILER == "clang" ]]; then
 		make -j"$PROCS" O=out \
 				CROSS_COMPILE=aarch64-linux-gnu- \
-				CC=clang \
-				AR=llvm-ar \
-				NM=llvm-nm \
-				LD=ld.lld \
-				OBJDUMP=llvm-objdump \
-				STRIP=llvm-strip
+				LLVM=1
 	elif [[ $COMPILER == "gcc" ]]; then
 		export CROSS_COMPILE_ARM32=$GCC32_DIR/bin/arm-eabi-
 		make -j"$PROCS" O=out CROSS_COMPILE=aarch64-elf-
