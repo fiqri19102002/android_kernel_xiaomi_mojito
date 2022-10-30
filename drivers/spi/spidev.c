@@ -91,9 +91,9 @@ static LIST_HEAD(device_list);
 static DEFINE_MUTEX(device_list_lock);
 
 #ifdef CONFIG_MACH_XIAOMI_MOJITO
-static unsigned bufsiz = 4096 * 10;
+static unsigned int bufsiz = 4096 * 10;
 #else
-static unsigned bufsiz = 4096;
+static unsigned int bufsiz = 4096;
 #endif
 module_param(bufsiz, uint, S_IRUGO);
 MODULE_PARM_DESC(bufsiz, "data bytes in biggest supported SPI message");
