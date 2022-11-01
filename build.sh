@@ -39,8 +39,11 @@ DISTRO=$(source /etc/os-release && echo ${NAME})
 PROCS=$(nproc --all)
 export PROCS
 
-# Set Date and time
-DATE=$(TZ=Asia/Jakarta date +"%Y%m%d-%T")
+# Set date and time
+DATE=$(TZ=Asia/Jakarta date)
+
+# Set date and time for zip name
+ZIP_DATE=$(TZ=Asia/Jakarta date +"%Y%m%d-%H%M")
 
 # Get branch name
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
@@ -116,14 +119,14 @@ clone() {
 
 # Set function for naming zip file
 set_naming() {
-	KERNEL_NAME="STRIX-mojito-personal-$DATE"
+	KERNEL_NAME="STRIX-mojito-personal-$ZIP_DATE"
 	export ZIP_NAME="$KERNEL_NAME.zip"
 }
 
 # Set function for starting compile
 compile() {
 	echo -e "Kernel compilation starting"
-	tg_post_msg "<b>Docker OS: </b><code>$DISTRO</code>%0A<b>Kernel Version : </b><code>$KERVER</code>%0A<b>Date : </b><code>$(TZ=Asia/Jakarta date)</code>%0A<b>Device : </b><code>Redmi Note 10 (mojito)</code>%0A<b>Pipeline Host : </b><code>$KBUILD_BUILD_HOST</code>%0A<b>Host Core Count : </b><code>$PROCS</code>%0A<b>Compiler Used : </b><code>$KBUILD_COMPILER_STRING</code>%0a<b>Branch : </b><code>$BRANCH</code>%0A<b>Last Commit : </b><code>$COMMIT_HEAD</code>%0A<b>Status : </b>#Personal"
+	tg_post_msg "<b>Docker OS: </b><code>$DISTRO</code>%0A<b>Kernel Version : </b><code>$KERVER</code>%0A<b>Date : </b><code>$DATE</code>%0A<b>Device : </b><code>Redmi Note 10 (mojito)</code>%0A<b>Pipeline Host : </b><code>$KBUILD_BUILD_HOST</code>%0A<b>Host Core Count : </b><code>$PROCS</code>%0A<b>Compiler Used : </b><code>$KBUILD_COMPILER_STRING</code>%0a<b>Branch : </b><code>$BRANCH</code>%0A<b>Last Commit : </b><code>$COMMIT_HEAD</code>%0A<b>Status : </b>#Personal"
 	make O=out "$DEFCONFIG"
 	BUILD_START=$(date +"%s")
 	if [[ $COMPILER == "clang" ]]; then
