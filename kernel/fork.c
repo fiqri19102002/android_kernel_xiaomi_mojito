@@ -2254,12 +2254,20 @@ long _do_fork(unsigned long clone_flags,
 	 * Boost DDR bus and CPU to the max when userspace 
 	 * launches an app according to set kernel profile.
 	 */
-	if (task_is_zygote(current) && ((kp_active_mode() == 2) || (kp_active_mode() == 0))) {
-		cpu_input_boost_kick_max(50);
-		devfreq_boost_kick_max(DEVFREQ_CPU_LLCC_DDR_BW, 50);
-	} else if (task_is_zygote(current) && (kp_active_mode() == 3)) {
-		cpu_input_boost_kick_max(75);
-		devfreq_boost_kick_max(DEVFREQ_CPU_LLCC_DDR_BW, 75);
+	if (task_is_zygote(current)) {
+		switch (kp_active_mode()) {
+		case 0:
+		case 2:
+			cpu_input_boost_kick_max(50);
+			devfreq_boost_kick_max(DEVFREQ_CPU_LLCC_DDR_BW, 50);
+			break;
+		case 3:
+			cpu_input_boost_kick_max(75);
+			devfreq_boost_kick_max(DEVFREQ_CPU_LLCC_DDR_BW, 75);
+			break;
+		default:
+			break;
+		}
 	}
 
 	/*
