@@ -14,15 +14,8 @@ IMG_DIR="$KERNEL_DIR"/out/arch/arm64/boot
 # Get defconfig file
 DEFCONFIG=vendor/mojito_defconfig
 
-# Set environment for etc.
-export KBUILD_BUILD_VERSION="1"
+# Set common environment
 export KBUILD_BUILD_USER="FiqriArdyansyah"
-
-# Set environment for telegram
-export CHATID="-1001428085807"
-export token=$TELEGRAM_TOKEN
-export BOT_MSG_URL="https://api.telegram.org/bot$token/sendMessage"
-export BOT_BUILD_URL="https://api.telegram.org/bot$token/sendDocument"
 
 #
 # Set if do you use GCC or clang compiler
@@ -56,9 +49,18 @@ COMMIT_HEAD=$(git log --oneline -1)
 # Check directory path
 if [[ -d "/drone/src" ]]; then
 	echo -e "Detected DroneCI dir"
+	export LOCALBUILD=0
 	export KBUILD_BUILD_HOST=$DRONE_SYSTEM_HOST
+	export KBUILD_BUILD_VERSION="1"
+	# Set environment for telegram
+	export CHATID="-1001428085807"
+	export token=$TELEGRAM_TOKEN
+	export BOT_MSG_URL="https://api.telegram.org/bot$token/sendMessage"
+	export BOT_BUILD_URL="https://api.telegram.org/bot$token/sendDocument"
 else
 	echo -e "Detected local dir"
+	export LOCALBUILD=1
+	export KBUILD_BUILD_HOST=$(uname -a | awk '{print $2}')
 fi
 
 # Set function for telegram
@@ -118,7 +120,9 @@ set_naming() {
 # Set function for starting compile
 compile() {
 	echo -e "Kernel compilation starting"
-	tg_post_msg "<b>Docker OS: </b><code>$DISTRO</code>%0A<b>Kernel Version : </b><code>$KERVER</code>%0A<b>Date : </b><code>$DATE</code>%0A<b>Device : </b><code>Redmi Note 10 (mojito)</code>%0A<b>Pipeline Host : </b><code>$KBUILD_BUILD_HOST</code>%0A<b>Host Core Count : </b><code>$PROCS</code>%0A<b>Compiler Used : </b><code>$KBUILD_COMPILER_STRING</code>%0a<b>Branch : </b><code>$BRANCH</code>%0A<b>Last Commit : </b><code>$COMMIT_HEAD</code>%0A<b>Status : </b>#Personal"
+	if [[ $LOCALBUILD == "0" ]]; then
+		tg_post_msg "<b>Docker OS: </b><code>$DISTRO</code>%0A<b>Kernel Version : </b><code>$KERVER</code>%0A<b>Date : </b><code>$DATE</code>%0A<b>Device : </b><code>Redmi Note 10 (mojito)</code>%0A<b>Pipeline Host : </b><code>$KBUILD_BUILD_HOST</code>%0A<b>Host Core Count : </b><code>$PROCS</code>%0A<b>Compiler Used : </b><code>$KBUILD_COMPILER_STRING</code>%0a<b>Branch : </b><code>$BRANCH</code>%0A<b>Last Commit : </b><code>$COMMIT_HEAD</code>%0A<b>Status : </b>#Personal"
+	fi
 	make O=out "$DEFCONFIG"
 	BUILD_START=$(date +"%s")
 	if [[ $COMPILER == "clang" ]]; then
@@ -137,13 +141,21 @@ compile() {
 	elif ! [ -f "$IMG_DIR"/Image ]
 	then
 		echo -e "Kernel compilation failed"
-		tg_post_msg "<b>Build failed to compile after $((DIFF / 60)) minute(s) and $((DIFF % 60)) seconds</b>"
+		if [[ $LOCALBUILD == "0" ]]; then
+			tg_post_msg "<b>Build failed to compile after $((DIFF / 60)) minute(s) and $((DIFF % 60)) seconds</b>"
+		fi
 		exit 1
 	fi
 }
 
 # Set function for zipping into a flashable zip
 gen_zip() {
+	if [[ $LOCALBUILD == "1" ]]; then
+		cd AnyKernel3 || exit
+		rm -rf dtb dtbo.img Image *.zip
+		cd ..
+	fi
+
 	# Move kernel image to AnyKernel3
 	cat "$IMG_DIR"/dts/qcom/sm6150.dtb > AnyKernel3/dtb
 	mv "$IMG_DIR"/dtbo.img AnyKernel3/dtbo.img
@@ -156,7 +168,9 @@ gen_zip() {
 	# Prepare a final zip variable
 	ZIP_FINAL="$ZIP_NAME"
 
-	tg_post_build "$ZIP_FINAL" "Build took : $((DIFF / 60)) minute(s) and $((DIFF % 60)) second(s)"
+	if [[ $LOCALBUILD == "0" ]]; then
+		tg_post_build "$ZIP_FINAL" "Build took : $((DIFF / 60)) minute(s) and $((DIFF % 60)) second(s)"
+	fi
 	cd ..
 }
 
