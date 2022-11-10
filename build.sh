@@ -53,18 +53,12 @@ KERVER=$(make kernelversion)
 # Get last commit
 COMMIT_HEAD=$(git log --oneline -1)
 
-# Check if we are using a dedicated CI (Continuous Integration) 
-# and set KBUILD_BUILD_HOST
-
-# Check for CI
-if [[ "$CI" ]]; then
-	if [[ "$DRONE" ]]; then
-		export KBUILD_BUILD_HOST=$DRONE_SYSTEM_HOST
-	else
-		echo "Use default build host name"
-	fi
+# Check directory path
+if [[ -d "/drone/src" ]]; then
+	echo -e "Detected DroneCI dir"
+	export KBUILD_BUILD_HOST=$DRONE_SYSTEM_HOST
 else
-	echo "Use default build host name"
+	echo -e "Detected local dir"
 fi
 
 # Set function for telegram
