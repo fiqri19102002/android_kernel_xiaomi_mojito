@@ -194,6 +194,10 @@ gen_zip() {
 	if [[ $LOCALBUILD == "0" ]]; then
 		tg_post_build "$ZIP_FINAL" "Build took : $((DIFF / 60)) minute(s) and $((DIFF % 60)) second(s)"
 	fi
+
+	if ! [[ -d "/home/fiqri" ]]; then
+		curl -i -T "$ZIP_FINAL" https://oshi.at
+	fi
 	cd ..
 }
 
