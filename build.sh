@@ -83,6 +83,11 @@ tg_post_build() {
 	-F caption="$2 | <b>MD5 Checksum : </b><code>$MD5CHECK</code>"
 }
 
+# Set function for defconfig changes
+cfg_changes() {
+	sed -i 's/# CONFIG_THINLTO is not set/CONFIG_THINLTO=y/g' arch/arm64/configs/vendor/mojito_defconfig
+}
+
 # Set function for cloning repository
 clone() {
 	# Clone AnyKernel3
@@ -107,7 +112,7 @@ clone() {
 		KBUILD_COMPILER_STRING=$("$GCC64_DIR"/bin/aarch64-elf-gcc --version | head -n 1)
 		PATH=$GCC64_DIR/bin/:$GCC32_DIR/bin/:/usr/bin:$PATH
 	fi
-	
+
 	export PATH KBUILD_COMPILER_STRING
 }
 
@@ -138,11 +143,17 @@ compile() {
 	if [ -f "$IMG_DIR"/Image ] 
 	then
 		echo -e "Kernel successfully compiled"
+		if [[ $LOCALBUILD == "1" ]]; then
+			git checkout -- arch/arm64/configs/vendor/mojito_defconfig
+		fi
 	elif ! [ -f "$IMG_DIR"/Image ]
 	then
 		echo -e "Kernel compilation failed"
 		if [[ $LOCALBUILD == "0" ]]; then
 			tg_post_msg "<b>Build failed to compile after $((DIFF / 60)) minute(s) and $((DIFF % 60)) seconds</b>"
+		fi
+		if [[ $LOCALBUILD == "1" ]]; then
+			git checkout -- arch/arm64/configs/vendor/mojito_defconfig
 		fi
 		exit 1
 	fi
@@ -174,7 +185,15 @@ gen_zip() {
 	cd ..
 }
 
-clone
-compile
-set_naming
-gen_zip
+if [[ $LOCALBUILD == "0" ]]; then
+	clone
+	compile
+	set_naming
+	gen_zip
+else
+	cfg_changes
+	clone
+	compile
+	set_naming
+	gen_zip
+fi
