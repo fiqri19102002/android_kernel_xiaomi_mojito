@@ -47,7 +47,7 @@ KERVER=$(make kernelversion)
 COMMIT_HEAD=$(git log --oneline -1)
 
 # Check directory path
-if [[ -d "/drone/src" ]]; then
+if [ -d "/drone/src" ]; then
 	echo -e "Detected DroneCI dir"
 	export LOCALBUILD=0
 	export KBUILD_BUILD_HOST=$DRONE_SYSTEM_HOST
@@ -85,7 +85,7 @@ tg_post_build() {
 
 # Set function for defconfig changes
 cfg_changes() {
-	if [[ $COMPILER == "gcc" ]]; then
+	if [ $COMPILER == "gcc" ]; then
 		sed -i 's/CONFIG_LTO=y/# CONFIG_LTO is not set/g' arch/arm64/configs/vendor/mojito_defconfig
 		sed -i 's/CONFIG_LTO_CLANG=y/# CONFIG_LTO_CLANG is not set/g' arch/arm64/configs/vendor/mojito_defconfig
 		sed -i 's/# CONFIG_LTO_NONE is not set/CONFIG_LTO_NONE=y/g' arch/arm64/configs/vendor/mojito_defconfig
@@ -93,8 +93,8 @@ cfg_changes() {
 		sed -i 's/# CONFIG_INIT_STACK_NONE is not set/CONFIG_INIT_STACK_NONE=y/g' arch/arm64/configs/vendor/mojito_defconfig
 	fi
 
-	if [[ $LOCALBUILD == "1" ]]; then
-		if [[ $COMPILER == "clang" ]]; then
+	if [ $LOCALBUILD == "1" ]; then
+		if [ $COMPILER == "clang" ]; then
 			sed -i 's/# CONFIG_THINLTO is not set/CONFIG_THINLTO=y/g' arch/arm64/configs/vendor/mojito_defconfig
 		fi
 	fi	
@@ -105,7 +105,7 @@ clone() {
 	# Clone AnyKernel3
 	git clone --depth=1 https://github.com/fiqri19102002/AnyKernel3.git -b mojito
 
-	if [[ $COMPILER == "clang" ]]; then
+	if [ $COMPILER == "clang" ]; then
 		# Clone Proton clang
 		git clone --depth=1 https://gitlab.com/fiqri19102002/proton_clang-mirror.git clang
 		# Set environment for clang
@@ -113,7 +113,7 @@ clone() {
 		# Get path and compiler string
 		KBUILD_COMPILER_STRING=$("$TC_DIR"/bin/clang --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
 		PATH=$TC_DIR/bin/:$PATH
-	elif [[ $COMPILER == "gcc" ]]; then
+	elif [ $COMPILER == "gcc" ]; then
 		# Clone GCC ARM64 and ARM32
 		git clone https://github.com/fiqri19102002/aarch64-gcc.git -b elf-gcc-11-tarballs --depth=1 gcc64
 		git clone https://github.com/fiqri19102002/arm-gcc.git -b elf-gcc-11-tarballs --depth=1 gcc32
@@ -137,31 +137,29 @@ set_naming() {
 # Set function for starting compile
 compile() {
 	echo -e "Kernel compilation starting"
-	if [[ $LOCALBUILD == "0" ]]; then
+	if [ $LOCALBUILD == "0" ]; then
 		tg_post_msg "<b>Docker OS: </b><code>$DISTRO</code>%0A<b>Kernel Version : </b><code>$KERVER</code>%0A<b>Date : </b><code>$DATE</code>%0A<b>Device : </b><code>Redmi Note 10 (mojito)</code>%0A<b>Pipeline Host : </b><code>$KBUILD_BUILD_HOST</code>%0A<b>Host Core Count : </b><code>$PROCS</code>%0A<b>Compiler Used : </b><code>$KBUILD_COMPILER_STRING</code>%0a<b>Branch : </b><code>$BRANCH</code>%0A<b>Last Commit : </b><code>$COMMIT_HEAD</code>%0A<b>Status : </b>#Personal"
 	fi
 	make O=out "$DEFCONFIG"
 	BUILD_START=$(date +"%s")
-	if [[ $COMPILER == "clang" ]]; then
+	if [ $COMPILER == "clang" ]; then
 		make -j"$PROCS" O=out \
 				CROSS_COMPILE=aarch64-linux-gnu- \
 				LLVM=1
-	elif [[ $COMPILER == "gcc" ]]; then
+	elif [ $COMPILER == "gcc" ]; then
 		export CROSS_COMPILE_COMPAT=$GCC32_DIR/bin/arm-eabi-
 		make -j"$PROCS" O=out CROSS_COMPILE=aarch64-elf-
 	fi
 	BUILD_END=$(date +"%s")
 	DIFF=$((BUILD_END - BUILD_START))
-	if [ -f "$IMG_DIR"/Image ] 
-	then
+	if [ -f "$IMG_DIR"/Image ]; then
 		echo -e "Kernel successfully compiled"
-		if [[ $LOCALBUILD == "1" ]]; then
+		if [ $LOCALBUILD == "1" ]; then
 			git checkout -- arch/arm64/configs/vendor/mojito_defconfig
 		fi
-	elif ! [ -f "$IMG_DIR"/Image ]
-	then
+	elif ! [ -f "$IMG_DIR"/Image ]; then
 		echo -e "Kernel compilation failed"
-		if [[ $LOCALBUILD == "0" ]]; then
+		if [ $LOCALBUILD == "0" ]; then
 			tg_post_msg "<b>Build failed to compile after $((DIFF / 60)) minute(s) and $((DIFF % 60)) seconds</b>"
 		fi
 		if [[ $LOCALBUILD == "1" ]]; then
@@ -173,7 +171,7 @@ compile() {
 
 # Set function for zipping into a flashable zip
 gen_zip() {
-	if [[ $LOCALBUILD == "1" ]]; then
+	if [ $LOCALBUILD == "1" ]; then
 		cd AnyKernel3 || exit
 		rm -rf dtb dtbo.img Image *.zip
 		cd ..
@@ -191,11 +189,11 @@ gen_zip() {
 	# Prepare a final zip variable
 	ZIP_FINAL="$ZIP_NAME"
 
-	if [[ $LOCALBUILD == "0" ]]; then
+	if [ $LOCALBUILD == "0" ]; then
 		tg_post_build "$ZIP_FINAL" "Build took : $((DIFF / 60)) minute(s) and $((DIFF % 60)) second(s)"
 	fi
 
-	if ! [[ -d "/home/fiqri" ]]; then
+	if ! [ -d "/home/fiqri" ]; then
 		curl -i -T "$ZIP_FINAL" https://oshi.at
 	fi
 	cd ..
