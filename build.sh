@@ -85,7 +85,19 @@ tg_post_build() {
 
 # Set function for defconfig changes
 cfg_changes() {
-	sed -i 's/# CONFIG_THINLTO is not set/CONFIG_THINLTO=y/g' arch/arm64/configs/vendor/mojito_defconfig
+	if [[ $COMPILER == "gcc" ]]; then
+		sed -i 's/CONFIG_LTO=y/# CONFIG_LTO is not set/g' arch/arm64/configs/vendor/mojito_defconfig
+		sed -i 's/CONFIG_LTO_CLANG=y/# CONFIG_LTO_CLANG is not set/g' arch/arm64/configs/vendor/mojito_defconfig
+		sed -i 's/# CONFIG_LTO_NONE is not set/CONFIG_LTO_NONE=y/g' arch/arm64/configs/vendor/mojito_defconfig
+		sed -i 's/CONFIG_INIT_STACK_ALL_ZERO=y/# CONFIG_INIT_STACK_ALL_ZERO is not set/g' arch/arm64/configs/vendor/mojito_defconfig
+		sed -i 's/# CONFIG_INIT_STACK_NONE is not set/CONFIG_INIT_STACK_NONE=y/g' arch/arm64/configs/vendor/mojito_defconfig
+	fi
+
+	if [[ $LOCALBUILD == "1" ]]; then
+		if [[ $COMPILER == "clang" ]]; then
+			sed -i 's/# CONFIG_THINLTO is not set/CONFIG_THINLTO=y/g' arch/arm64/configs/vendor/mojito_defconfig
+		fi
+	fi	
 }
 
 # Set function for cloning repository
@@ -185,15 +197,8 @@ gen_zip() {
 	cd ..
 }
 
-if [[ $LOCALBUILD == "0" ]]; then
-	clone
-	compile
-	set_naming
-	gen_zip
-else
-	cfg_changes
-	clone
-	compile
-	set_naming
-	gen_zip
-fi
+cfg_changes
+clone
+compile
+set_naming
+gen_zip
