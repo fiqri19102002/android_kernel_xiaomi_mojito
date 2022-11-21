@@ -15,8 +15,6 @@ IMG_DIR="$KERNEL_DIR"/out/arch/arm64/boot
 DEFCONFIG=vendor/mojito_defconfig
 
 # Set environment for etc.
-export ARCH=arm64
-export SUBARCH=arm64
 export KBUILD_BUILD_VERSION="1"
 export KBUILD_BUILD_USER="FiqriArdyansyah"
 
