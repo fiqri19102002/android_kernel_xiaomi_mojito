@@ -193,7 +193,7 @@ gen_zip() {
 		tg_post_build "$ZIP_FINAL" "Build took : $((DIFF / 60)) minute(s) and $((DIFF % 60)) second(s)"
 	fi
 
-	if ! [ -d "/home/fiqri" ]; then
+	if ! [[ -d "/home/fiqri" || -d "/drone/src" ]]; then
 		curl -i -T "$ZIP_FINAL" https://oshi.at
 	fi
 	cd ..
