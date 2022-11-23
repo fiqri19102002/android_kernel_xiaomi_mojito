@@ -99,6 +99,8 @@ cfg_changes() {
 	if [ $LOCALBUILD == "1" ]; then
 		if [ $COMPILER == "clang" ]; then
 			sed -i 's/# CONFIG_THINLTO is not set/CONFIG_THINLTO=y/g' arch/arm64/configs/vendor/mojito_defconfig
+		elif [ $COMPILER == "gcc" ]; then
+			sed -i 's/CONFIG_LTO_GCC=y/# CONFIG_LTO_GCC is not set/g' arch/arm64/configs/vendor/mojito_defconfig
 		fi
 	fi	
 }
