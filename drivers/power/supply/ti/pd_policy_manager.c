@@ -866,7 +866,7 @@ static int usbpd_pm_sm(struct usbpd_pm *pdpm)
 			else
 				usbpd_select_pdo(pdpm->pd, pdpm->apdo_selected_pdo,
 					6000000, pdpm->apdo_max_curr * 1000);
-				pr_debug("batt_volt %d, waiting...\n", pdpm->cp.vbat_volt);
+			pr_debug("batt_volt %d, waiting...\n", pdpm->cp.vbat_volt);
 		} else if (pdpm->cp.vbat_volt > pm_config.bat_volt_lp_lmt - 50) {
 			pr_debug("batt_volt %d is too high for cp,\
 					charging with switch charger\n",
