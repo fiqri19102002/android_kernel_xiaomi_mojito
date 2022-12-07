@@ -144,7 +144,7 @@ clone() {
 
 # Set function for naming zip file
 set_naming() {
-	KERNEL_NAME="STRIX-mojito-personal-$ZIP_DATE"
+	KERNEL_NAME="STRIX-mojito-v1.3-eol-$ZIP_DATE"
 	export ZIP_NAME="$KERNEL_NAME.zip"
 }
 
