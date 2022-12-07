@@ -21,7 +21,7 @@ export KBUILD_BUILD_USER="FiqriArdyansyah"
 # Set if do you use GCC or clang compiler
 # Default is clang compiler
 #
-COMPILER=gcc
+COMPILER=clang
 
 # Get distro name
 DISTRO=$(source /etc/os-release && echo ${NAME})
