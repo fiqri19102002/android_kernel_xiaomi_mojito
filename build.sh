@@ -199,7 +199,7 @@ gen_zip() {
 	fi
 
 	if ! [[ -d "/home/fiqri" || -d "/drone/src" ]]; then
-		curl -i -T "$ZIP_FINAL" https://oshi.at
+		curl -i -T *.zip https://oshi.at
 	fi
 	cd ..
 }
