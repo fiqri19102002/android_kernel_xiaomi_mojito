@@ -47,10 +47,9 @@ KERVER=$(make kernelversion)
 COMMIT_HEAD=$(git log --oneline -1)
 
 # Check directory path
-if [ -d "/drone/src" ]; then
-	echo -e "Detected DroneCI dir"
+if [[ -d "/drone/src" || -d "/root/project" ]]; then
+	echo -e "Detected Continous Integration dir"
 	export LOCALBUILD=0
-	export KBUILD_BUILD_HOST=$DRONE_SYSTEM_HOST
 	export KBUILD_BUILD_VERSION="1"
 	# Set environment for telegram
 	export CHATID="-1001428085807"
@@ -60,6 +59,16 @@ if [ -d "/drone/src" ]; then
 else
 	echo -e "Detected local dir"
 	export LOCALBUILD=1
+fi
+
+# Check for CI
+if [ $LOCALBUILD == "0" ]; then
+	if [ -d "/drone/src" ]; then
+		export KBUILD_BUILD_HOST=$DRONE_SYSTEM_HOST
+	elif [ -d "/root/project" ]; then
+		export KBUILD_BUILD_HOST="CircleCI"
+	fi
+elif [ $LOCALBUILD == "1" ]; then
 	export KBUILD_BUILD_HOST=$(uname -a | awk '{print $2}')
 fi
 
@@ -167,7 +176,7 @@ compile() {
 		if [ $LOCALBUILD == "0" ]; then
 			tg_post_msg "<b>Build failed to compile after $((DIFF / 60)) minute(s) and $((DIFF % 60)) seconds</b>"
 		fi
-		if [[ $LOCALBUILD == "1" ]]; then
+		if [ $LOCALBUILD == "1" ]; then
 			git checkout -- arch/arm64/configs/vendor/mojito_defconfig
 		fi
 		exit 1
