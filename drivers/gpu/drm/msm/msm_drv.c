@@ -40,6 +40,7 @@
 #include <linux/of_address.h>
 #include <linux/kthread.h>
 #include <linux/workqueue.h>
+#include <linux/binfmts.h>
 #include <uapi/linux/sched/types.h>
 #include <drm/drm_of.h>
 #include <soc/qcom/boot_stats.h>
@@ -514,6 +515,9 @@ static ssize_t idle_encoder_mask_store(struct device *device,
 	int rc;
 	unsigned long flags;
 
+	if (task_is_booster(current))
+		return count;
+
 	rc = kstrtouint(buf, 0, &encoder_mask);
 	if (rc)
 		return rc;
@@ -547,6 +551,9 @@ static ssize_t idle_timeout_ms_store(struct device *device,
 	u32 timeout_ms = 0;
 	int rc;
 	unsigned long flags;
+
+	if (task_is_booster(current))
+		return count;
 
 	rc = kstrtouint(buf, 10, &timeout_ms);
 	if (rc)
