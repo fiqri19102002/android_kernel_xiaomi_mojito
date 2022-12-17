@@ -21,8 +21,8 @@
 #include "sched.h"
 
 #define SUGOV_KTHREAD_PRIORITY	50
-#define UP_RATE_LIMIT_US		(20000)
-#define DOWN_RATE_LIMIT_US		(500)
+#define UP_RATE_LIMIT_US		(500)
+#define DOWN_RATE_LIMIT_US		(20000)
 
 struct sugov_tunables {
 	struct gov_attr_set attr_set;
