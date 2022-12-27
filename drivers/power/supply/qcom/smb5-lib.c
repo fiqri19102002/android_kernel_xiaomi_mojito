@@ -2901,9 +2901,9 @@ int smblib_set_prop_system_temp_level(struct smb_charger *chg,
 
 	if (val->intval == chg->system_temp_level)
 		return 0;
-#else
-	chg->system_temp_level = val->intval;
 #endif
+
+	chg->system_temp_level = val->intval;
 
 	if (chg->system_temp_level == chg->thermal_levels)
 		return vote(chg->chg_disable_votable,
