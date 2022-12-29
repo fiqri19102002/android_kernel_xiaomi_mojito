@@ -778,7 +778,7 @@ static int pd_send_msg(struct usbpd *pd, u8 msg_type, const u32 *data,
 
 #ifdef CONFIG_MACH_XIAOMI_MOJITO
 	pd->tx_msgid[sop] = (pd->tx_msgid[sop] + 1) & PD_MAX_MSG_ID;
-	usbpd_info(&pd->dev, "pd->tx_msgid[sop]:%d,hdr:%x\n", pd->tx_msgid[sop], hdr);
+	usbpd_dbg(&pd->dev, "pd->tx_msgid[sop]:%d,hdr:%x\n", pd->tx_msgid[sop], hdr);
 #endif
 	/* bail out and try again later if a message just arrived */
 	spin_lock_irqsave(&pd->rx_lock, flags);
@@ -915,7 +915,7 @@ static int pd_select_pdo(struct usbpd *pd, int pdo_pos, int uv, int ua)
 #ifdef CONFIG_MACH_XIAOMI_MOJITO
 		/* use xiaomi pps control state machine */
 		if (pd->non_qcom_pps_ctr) {
-			usbpd_err(&pd->dev, "PPS is controlled by ourself, return not support\n");
+			usbpd_dbg(&pd->dev, "PPS is controlled by ourself, return not support\n");
 			return -ENOTSUPP;
 		}
 
@@ -1123,7 +1123,7 @@ static int pd_eval_src_caps(struct usbpd *pd)
 					pd->pps_weak_limit = true;
 			}
 		}
-		usbpd_info(&pd->dev, "%s max_volt:%d,min_volt:%d,max_curr:%d\n",
+		usbpd_dbg(&pd->dev, "%s max_volt:%d,min_volt:%d,max_curr:%d\n",
 		          (PD_SRC_PDO_TYPE(pdo) == PD_SRC_PDO_TYPE_AUGMENTED) ? "PPS" : "PD2.0",
 		          max_volt, min_volt, max_curr);
 	}
@@ -2253,7 +2253,7 @@ static void handle_vdm_rx(struct usbpd *pd, struct rx_msg *rx_msg)
 			if (num_vdos != 0) {
 				for (i = 0; i < num_vdos; i++) {
 					pd->adapter_id = vdos[i] & 0xFFFF;
-					usbpd_info(&pd->dev, "pd->adapter_id:0x%x\n", pd->adapter_id);
+					usbpd_dbg(&pd->dev, "pd->adapter_id:0x%x\n", pd->adapter_id);
 				}
 			}
 #endif
@@ -4432,7 +4432,7 @@ static ssize_t select_pdo_store(struct device *dev,
 	}
 
 #ifdef CONFIG_MACH_XIAOMI_MOJITO
-	pr_info("request pdo: %d, uv: %d, ua: %d\n", pdo, uv, ua);
+	pr_debug("request pdo: %d, uv: %d, ua: %d\n", pdo, uv, ua);
 #endif
 	ret = pd_select_pdo(pd, pdo, uv, ua);
 	if (ret)
@@ -4807,7 +4807,7 @@ static ssize_t verify_process_store(struct device *dev,
 	}
 
 	pd->verify_process = !!val;
-	usbpd_info(&pd->dev, "batterysecret verify process :%d\n", pd->verify_process);
+	usbpd_dbg(&pd->dev, "batterysecret verify process :%d\n", pd->verify_process);
 
 	return size;
 }
@@ -5096,7 +5096,7 @@ static void usbpd_mi_connect_cb(struct usbpd_svid_handler *hdlr,
 
 	pr_debug("peer_usb_comm: %d\n", peer_usb_comm);
 	pd->uvdm_state = USBPD_UVDM_CONNECT;
-	usbpd_info(&pd->dev, "hdlr->svid:%x has connect\n", hdlr->svid);
+	usbpd_dbg(&pd->dev, "hdlr->svid:%x has connect\n", hdlr->svid);
 
 	return;
 }
@@ -5219,11 +5219,11 @@ int usbpd_fetch_pdo(struct usbpd *pd, struct usbpd_pdo *pdos)
 		goto out;
 	}
 
-	pr_err("usbpd pd=%x\n", pd);
+	pr_debug("usbpd pd=%x\n", pd);
 
 	for (i = 0; i < 7; i++) {
 		pdo = pd->received_pdos[i];
-		pr_err("PDO:%d\n", pdo);
+		pr_debug("PDO:%d\n", pdo);
 		if (pdo == 0)
 			break;
 
@@ -5235,13 +5235,13 @@ int usbpd_fetch_pdo(struct usbpd *pd, struct usbpd_pdo *pdos)
 			pdos[i].curr_ma = PD_SRC_PDO_FIXED_MAX_CURR(pdo) * 10;
 			pdos[i].max_volt_mv = PD_SRC_PDO_FIXED_VOLTAGE(pdo) * 50;
 			pdos[i].min_volt_mv = PD_SRC_PDO_FIXED_VOLTAGE(pdo) * 50;
-			usbpd_err(&pd->dev, "pdo:%d, Fixed supply, volt:%d(mv), max curr:%d\n",
+			usbpd_dbg(&pd->dev, "pdo:%d, Fixed supply, volt:%d(mv), max curr:%d\n",
 			          i + 1, pdos[i].max_volt_mv, pdos[i].curr_ma);
 		} else if (pdos[i].type == PD_SRC_PDO_TYPE_AUGMENTED) {
 			pdos[i].max_volt_mv = PD_APDO_MAX_VOLT(pdo) * 100;
 			pdos[i].min_volt_mv = PD_APDO_MIN_VOLT(pdo) * 100;
 			pdos[i].curr_ma     = PD_APDO_MAX_CURR(pdo) * 50;
-			usbpd_err(&pd->dev, "pdo:%d, PPS, volt: %d(mv), max curr:%d\n",
+			usbpd_dbg(&pd->dev, "pdo:%d, PPS, volt: %d(mv), max curr:%d\n",
 			          i + 1, pdos[i].max_volt_mv, pdos[i].curr_ma);
 		} else {
 			usbpd_err(&pd->dev, "only fixed and pps pdo supported\n");
@@ -5250,7 +5250,7 @@ int usbpd_fetch_pdo(struct usbpd *pd, struct usbpd_pdo *pdos)
 
 out:
 	mutex_unlock(&pd->swap_lock);
-	pr_err("usbpd_fetch_pdo:after swap_lock");
+	pr_debug("usbpd_fetch_pdo:after swap_lock");
 	return ret;
 }
 EXPORT_SYMBOL(usbpd_fetch_pdo);
