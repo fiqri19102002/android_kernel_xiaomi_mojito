@@ -2226,7 +2226,7 @@ static int qg_get_ffc_iterm_for_qg(struct qpnp_qg *chip)
 		ffc_qg_iterm = LOW_TEMP_FFC_BATT_FULL_CURRENT;
 	}
 
-	pr_info("ffc_batt_full_current=%d\n", ffc_qg_iterm);
+	pr_debug("ffc_batt_full_current=%d\n", ffc_qg_iterm);
 
 	return ffc_qg_iterm;
 }

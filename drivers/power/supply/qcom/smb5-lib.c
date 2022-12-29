@@ -927,7 +927,7 @@ set_term:
 	smb5_config_iterm(chg, termi, 0);
 	rc = vote(chg->fcc_votable, PD_VERIFED_VOTER,
 			!enable, PD_UNVERIFED_CURRENT);
-	pr_info("fastcharge mode:%d termi:%d\n", enable, termi);
+	pr_debug("fastcharge mode:%d termi:%d\n", enable, termi);
 
 	return 0;
 }
@@ -2768,7 +2768,7 @@ static void smblib_get_start_vbat_before_step_charge(struct smb_charger *chg)
 	else
 		pr_err("could not get vbat vol from bms\n");
 
-	pr_err("chg->start_step_vbat: %d\n", chg->start_step_vbat);
+	pr_debug("chg->start_step_vbat: %d\n", chg->start_step_vbat);
 }
 #endif
 
@@ -3183,7 +3183,7 @@ int smblib_dp_dm(struct smb_charger *chg, int val)
 
 #ifdef CONFIG_MACH_XIAOMI_MOJITO
 	if (chg->use_bq_pump) {
-		pr_info("dp_dm is controled by our self\n");
+		pr_debug("dp_dm is controled by our self\n");
 		return rc;
 	}
 
@@ -3385,8 +3385,6 @@ int smblib_dp_dm_bq(struct smb_charger *chg, int val)
 	/* if raise_vbus work is running, ignore dp_dm pulses */
 	if (chg->raise_vbus_to_detect)
 		return rc;
-
-	smblib_err(chg, "smblib_dp_dm val=%d\n", val);
 
 	switch (val) {
 	case POWER_SUPPLY_DP_DM_DP_PULSE:
@@ -6882,7 +6880,7 @@ int smblib_get_quick_charge_type(struct smb_charger *chg)
 	if ((pval.intval == POWER_SUPPLY_HEALTH_COLD) || (pval.intval == POWER_SUPPLY_HEALTH_HOT))
 		return 0;
 
-	pr_err("[%s] real_charger_type=%d pd_verifed=%d qc_class_ab=%d\n",
+	pr_debug("[%s] real_charger_type=%d pd_verifed=%d qc_class_ab=%d\n",
 	        __func__, chg->real_charger_type, chg->pd_verifed, chg->qc_class_ab);
 	/* davinic do not need to report this type */
 	if ((chg->real_charger_type == POWER_SUPPLY_TYPE_USB_PD) && chg->pd_verifed && chg->qc_class_ab) {
@@ -7651,8 +7649,6 @@ static void typec_src_removal(struct smb_charger *chg)
 	chg->recheck_charger = false;
 	chg->snk_debug_acc_detected = false;
 
-	pr_err("%s:", __func__);
-
 	if (chg->pd_verifed)
 		chg->pd_verifed = false;
 
@@ -8366,7 +8362,7 @@ static void smblib_six_pin_batt_step_chg_work(struct work_struct *work)
 	union power_supply_propval pval = {0, };
 
 	rc = smblib_is_input_present(chg, &input_present);
-	pr_err("input_present: %d\n", input_present);
+	pr_debug("input_present: %d\n", input_present);
 	if (rc < 0)
 		return;
 
@@ -8433,7 +8429,7 @@ static void smblib_six_pin_batt_step_chg_work(struct work_struct *work)
 	}
 
 	main_charge_type = pval.intval;
-	pr_err("main_charge_type: %d\n", main_charge_type);
+	pr_debug("main_charge_type: %d\n", main_charge_type);
 
 	/*
 	 * Add capacity compare to optimize cool charge  switch to
@@ -8449,7 +8445,7 @@ static void smblib_six_pin_batt_step_chg_work(struct work_struct *work)
 
 	if (main_charge_type == POWER_SUPPLY_CHARGE_TYPE_TAPER && capacity > TAPER_BATT_CAPACITY_THR) {
 		fcc_ua = get_effective_result(chg->fcc_votable) - TAPER_DECREASE_FCC_UA;
-		pr_err("taper from main charger, reducing FCC to %duA\n", fcc_ua);
+		pr_debug("taper from main charger, reducing FCC to %duA\n", fcc_ua);
 		if (fcc_ua < MIN_TAPER_FCC_THR_UA)
 			goto out;
 
@@ -8467,7 +8463,7 @@ static void smblib_six_pin_batt_step_chg_work(struct work_struct *work)
 	}
 
 	ibat_ua = -pval.intval;
-	pr_err("ibat_ua: %d\n", ibat_ua);
+	pr_debug("ibat_ua: %d\n", ibat_ua);
 	if (main_charge_type == POWER_SUPPLY_CHARGE_TYPE_TAPER && (capacity > TAPER_BATT_CAPACITY_THR) && 
 	   (chg->index_vfloat < (MAX_STEP_ENTRIES - 1)) && ((ibat_ua <= 0) || 
 	   (ibat_ua <= (chg->six_pin_step_cfg[chg->index_vfloat + 1].fcc_step_ua + TAPER_IBAT_TRH_HYS_UA))))
