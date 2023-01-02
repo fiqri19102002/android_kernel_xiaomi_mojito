@@ -101,6 +101,8 @@ cfg_changes() {
 		sed -i 's/CONFIG_LTO=y/# CONFIG_LTO is not set/g' arch/arm64/configs/vendor/mojito_defconfig
 		sed -i 's/CONFIG_LTO_CLANG=y/# CONFIG_LTO_CLANG is not set/g' arch/arm64/configs/vendor/mojito_defconfig
 		sed -i 's/# CONFIG_LTO_NONE is not set/CONFIG_LTO_NONE=y/g' arch/arm64/configs/vendor/mojito_defconfig
+		sed -i 's/CONFIG_INIT_STACK_ALL_ZERO=y/# CONFIG_INIT_STACK_ALL_ZERO is not set/g' arch/arm64/configs/vendor/mojito_defconfig
+		sed -i 's/# CONFIG_INIT_STACK_NONE is not set/CONFIG_INIT_STACK_NONE=y/g' arch/arm64/configs/vendor/mojito_defconfig
 	fi
 
 	if [ $LOCALBUILD == "1" ]; then
