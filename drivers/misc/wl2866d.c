@@ -107,7 +107,7 @@ int wl2866d_camera_power_up(uint16_t camera_id)
 	unsigned char reg_val = 0;
 
 	if (0 == camera_id) {
-		pr_err("xyz wide:OV64B/imx582 camera_id=[%d] power up\n", camera_id);
+		pr_debug("xyz wide:OV64B/imx582 camera_id=[%d] power up\n", camera_id);
 		ret = wl2866d_i2c_write(camera_chip, wl2866d_on_config[OUT_DVDD2].reg, 0x54);//bit1
 		ret = wl2866d_i2c_write(camera_chip, wl2866d_on_config[OUT_AVDD2].reg, 0x88);//bit3 TODO:use 0x84/2.85V for debug
 
@@ -122,9 +122,9 @@ int wl2866d_camera_power_up(uint16_t camera_id)
 			return ret;
 		}
 
-		pr_err("xyz before set enable value = 0x%x\n", reg_val);
+		pr_debug("xyz before set enable value = 0x%x\n", reg_val);
 		reg_val |= 0b1010;//bit1,bit3
-		pr_err("xyz after  set enable value = 0x%x\n", reg_val);
+		pr_debug("xyz after  set enable value = 0x%x\n", reg_val);
 
 		ret = wl2866d_i2c_write(camera_chip, wl2866d_on_config[VOL_ENABLE].reg, reg_val);
 		if (ret < 0) {
@@ -134,13 +134,13 @@ int wl2866d_camera_power_up(uint16_t camera_id)
 	}
 	if ((1 == camera_id) || (2 == camera_id) || (3 == camera_id) || (4 == camera_id)) {
 		if (1 == camera_id) {
-			pr_err("xyz depth:ov02b1b/gc02m1b camera_id=[%d] power up\n", camera_id);
+			pr_debug("xyz depth:ov02b1b/gc02m1b camera_id=[%d] power up\n", camera_id);
 		} else if(2 == camera_id) {
-			pr_err("xyz front:ov13b10 camera_id=[%d] power up\n", camera_id);
+			pr_debug("xyz front:ov13b10 camera_id=[%d] power up\n", camera_id);
 		} else if(3 == camera_id) {
-			pr_err("xyz UW:imx355 camera_id=[%d] power up\n", camera_id);
+			pr_debug("xyz UW:imx355 camera_id=[%d] power up\n", camera_id);
 		} else if(4 == camera_id) {
-			pr_err("xyz macro:gc02m1 camera_id=[%d] power up\n", camera_id);
+			pr_debug("xyz macro:gc02m1 camera_id=[%d] power up\n", camera_id);
 		}
 		ret = wl2866d_i2c_write(camera_chip, wl2866d_on_config[OUT_AVDD1].reg, 0x81);//bit2
 		if (ret < 0) {
@@ -154,9 +154,9 @@ int wl2866d_camera_power_up(uint16_t camera_id)
 			return ret;
 		}
 
-		pr_err("xyz before set enable value = 0x%x\n", reg_val);
+		pr_debug("xyz before set enable value = 0x%x\n", reg_val);
 		reg_val |= 0b0100;//bit2
-		pr_err("xyz after  set enable value = 0x%x\n", reg_val);
+		pr_debug("xyz after  set enable value = 0x%x\n", reg_val);
 
 		ret = wl2866d_i2c_write(camera_chip, wl2866d_on_config[VOL_ENABLE].reg, reg_val);//bit1
 		if (ret < 0) {
@@ -166,9 +166,9 @@ int wl2866d_camera_power_up(uint16_t camera_id)
 	}
 	if ((2 == camera_id) || (3 == camera_id)) {
 		if (2 == camera_id) {
-			pr_err("xyz front:ov13b10 camera_id=[%d] power up\n", camera_id);
+			pr_debug("xyz front:ov13b10 camera_id=[%d] power up\n", camera_id);
 		} else if(3 == camera_id) {
-			pr_err("xyz UW:imx355 camera_id=[%d] power up\n", camera_id);
+			pr_debug("xyz UW:imx355 camera_id=[%d] power up\n", camera_id);
 		}
 		ret = wl2866d_i2c_write(camera_chip, wl2866d_on_config[OUT_DVDD1].reg, 0x64);//bit0
 		if (ret < 0) {
@@ -182,9 +182,9 @@ int wl2866d_camera_power_up(uint16_t camera_id)
 			return ret;
 		}
 
-		pr_err("xyz before set enable value = 0x%x\n", reg_val);
+		pr_debug("xyz before set enable value = 0x%x\n", reg_val);
 		reg_val |= 0b0001;//bit0
-		pr_err("xyz after  set enable value = 0x%x\n", reg_val);
+		pr_debug("xyz after  set enable value = 0x%x\n", reg_val);
 
 		ret = wl2866d_i2c_write(camera_chip, wl2866d_on_config[VOL_ENABLE].reg, reg_val);
 		if (ret < 0) {
@@ -193,7 +193,7 @@ int wl2866d_camera_power_up(uint16_t camera_id)
 		}
 	}
 
-	pr_err("xyz wl2866d result = %d\n", ret);
+	pr_debug("xyz wl2866d result = %d\n", ret);
 	return ret;
 }
 EXPORT_SYMBOL(wl2866d_camera_power_up);
@@ -212,16 +212,16 @@ int wl2866d_camera_power_down(uint16_t camera_id)
 
 	if (0 == camera_id) {
 		//camera_id 0 --> OV64B/imx582 wide
-		pr_err("xyz wide:OV64B/imx582 camera_id=[%d] power down AVDD2/DVDD2\n", camera_id);
+		pr_debug("xyz wide:OV64B/imx582 camera_id=[%d] power down AVDD2/DVDD2\n", camera_id);
 		ret = wl2866d_i2c_read(camera_chip, wl2866d_on_config[VOL_ENABLE].reg, &reg_val);
 		if (ret < 0) {
 			pr_err("xyz wl2866d read enable failed\n");
 			return ret;
 		}
 
-		pr_err("xyz before set enable value = 0x%x\n", reg_val);
+		pr_debug("xyz before set enable value = 0x%x\n", reg_val);
 		reg_val &= 0b0101;//bit1,bit3
-		pr_err("xyz after  set enable value = 0x%x\n", reg_val);
+		pr_debug("xyz after  set enable value = 0x%x\n", reg_val);
 
 		ret = wl2866d_i2c_write(camera_chip, wl2866d_on_config[VOL_ENABLE].reg, reg_val);
 		if (ret < 0) {
@@ -230,9 +230,9 @@ int wl2866d_camera_power_down(uint16_t camera_id)
 		}
 	} else if ((2 == camera_id) || (3 == camera_id)) {
 		if (2 == camera_id) {
-			pr_err("xyz front:ov13b10 camera_id=[%d] power down AVDD1/DVDD1\n", camera_id);
+			pr_debug("xyz front:ov13b10 camera_id=[%d] power down AVDD1/DVDD1\n", camera_id);
 		} else if(3 == camera_id) {
-			pr_err("xyz UW:imx355 camera_id=[%d] power down AVDD1/DVDD1\n", camera_id);
+			pr_debug("xyz UW:imx355 camera_id=[%d] power down AVDD1/DVDD1\n", camera_id);
 		}
 		ret = wl2866d_i2c_read(camera_chip, wl2866d_on_config[VOL_ENABLE].reg, &reg_val);
 		if (ret < 0) {
@@ -240,9 +240,9 @@ int wl2866d_camera_power_down(uint16_t camera_id)
 			return ret;
 		}
 
-		pr_err("xyz before set enable value = 0x%x\n", reg_val);
+		pr_debug("xyz before set enable value = 0x%x\n", reg_val);
 		reg_val &= 0b1010;//bit0,bit2
-		pr_err("xyz after  set enable value = 0x%x\n", reg_val);
+		pr_debug("xyz after  set enable value = 0x%x\n", reg_val);
 
 		ret = wl2866d_i2c_write(camera_chip, wl2866d_on_config[VOL_ENABLE].reg, reg_val);
 		if (ret < 0) {
@@ -251,9 +251,9 @@ int wl2866d_camera_power_down(uint16_t camera_id)
 		}
 	} else if ((1 == camera_id) || (4 == camera_id)) {
 		if (1 == camera_id) {
-			pr_err("xyz depth:ov02b1b/gc02m1b camera_id=[%d] power down AVDD1\n", camera_id);
+			pr_debug("xyz depth:ov02b1b/gc02m1b camera_id=[%d] power down AVDD1\n", camera_id);
 		} else if(4 == camera_id) {
-			pr_err("xyz macro:gc02m1 camera_id=[%d] power down AVDD1\n", camera_id);
+			pr_debug("xyz macro:gc02m1 camera_id=[%d] power down AVDD1\n", camera_id);
 		}
 		ret = wl2866d_i2c_read(camera_chip, wl2866d_on_config[VOL_ENABLE].reg, &reg_val);
 		if (ret < 0) {
@@ -261,9 +261,9 @@ int wl2866d_camera_power_down(uint16_t camera_id)
 			return ret;
 		}
 
-		pr_err("xyz before set enable value = 0x%x\n", reg_val);
+		pr_debug("xyz before set enable value = 0x%x\n", reg_val);
 		reg_val &= 0b1011;//bit2
-		pr_err("xyz after  set enable value = 0x%x\n", reg_val);
+		pr_debug("xyz after  set enable value = 0x%x\n", reg_val);
 
 		ret = wl2866d_i2c_write(camera_chip, wl2866d_on_config[VOL_ENABLE].reg, reg_val);
 		if (ret < 0) {
@@ -274,7 +274,7 @@ int wl2866d_camera_power_down(uint16_t camera_id)
 		pr_err("xyz wl2866d unknown camera!!!\n");
 	}
 
-	pr_err("xyz wl2866d result = %d\n", ret);
+	pr_debug("xyz wl2866d result = %d\n", ret);
 	return ret;
 }
 EXPORT_SYMBOL(wl2866d_camera_power_down);
