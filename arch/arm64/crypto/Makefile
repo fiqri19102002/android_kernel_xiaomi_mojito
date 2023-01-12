@@ -50,12 +50,6 @@ aes-arm64-y := aes-cipher-core.o aes-cipher-glue.o
 obj-$(CONFIG_CRYPTO_AES_ARM64_BS) += aes-neon-bs.o
 aes-neon-bs-y := aes-neonbs-core.o aes-neonbs-glue.o
 
-ifeq ($(cc-name),clang)
-ccflags-y += -mcpu=cortex-a55 -mtune=cortex-a55+crc+crypto
-else ifeq ($(cc-name),gcc)
-ccflags-y += -mtune=cortex-a76.cortex-a55 -march=armv8-a+crc+crypto
-endif
-
 AFLAGS_aes-ce.o		:= -DINTERLEAVE=4
 AFLAGS_aes-neon.o	:= -DINTERLEAVE=4
 

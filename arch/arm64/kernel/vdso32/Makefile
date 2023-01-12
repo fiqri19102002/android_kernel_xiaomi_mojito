@@ -91,12 +91,6 @@ VDSO_CFLAGS += -Wno-int-to-pointer-cast
 VDSO_AFLAGS := $(VDSO_CAFLAGS)
 VDSO_AFLAGS += -D__ASSEMBLY__
 
-ifeq ($(cc-name),clang)
-VDSO_CFLAGS += -mcpu=cortex-a55 -mtune=cortex-a55
-else ifeq ($(cc-name),gcc)
-VDSO_CFLAGS += -mtune=cortex-a76.cortex-a55 -march=armv8-a
-endif
-
 # From arm vDSO Makefile
 VDSO_LDFLAGS += -Bsymbolic --no-undefined -soname=linux-vdso.so.1
 VDSO_LDFLAGS += -z max-page-size=4096 -z common-page-size=4096
