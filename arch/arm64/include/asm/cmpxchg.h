@@ -38,7 +38,6 @@ static inline u##sz __xchg_case_##name##sz(u##sz x, volatile void *ptr)		\
 										\
 	asm volatile(ARM64_LSE_ATOMIC_INSN(					\
 	/* LSE atomics */							\
-	"	prfm	pstl1strm, %2\n"					\
 	"	swp" #acq_lse #rel #sfx "\t%" #w "3, %" #w "0, %2\n"		\
 	)									\
 	: "=&r" (ret), "=&r" (tmp), "+Q" (*(u##sz *)ptr)			\
