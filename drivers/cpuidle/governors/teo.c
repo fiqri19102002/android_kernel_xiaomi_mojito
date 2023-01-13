@@ -246,7 +246,7 @@ static int teo_select(struct cpuidle_driver *drv, struct cpuidle_device *dev,
 	int latency_req = pm_qos_request_for_cpu(PM_QOS_CPU_DMA_LATENCY, dev->cpu);
 	int resume_latency = dev_pm_qos_raw_read_value(device);
 	unsigned int duration_us, count;
-	int max_early_idx, idx, i;
+	int max_early_idx, constraint_idx, idx, i;
 	ktime_t delta_tick;
 
 	/* resume_latency is 0 means no restriction */
@@ -265,6 +265,7 @@ static int teo_select(struct cpuidle_driver *drv, struct cpuidle_device *dev,
 
 	count = 0;
 	max_early_idx = -1;
+	constraint_idx = drv->state_count;
 	idx = -1;
 
 	for (i = 0; i < drv->state_count; i++) {
@@ -294,16 +295,8 @@ static int teo_select(struct cpuidle_driver *drv, struct cpuidle_device *dev,
 		if (s->target_residency > duration_us)
 			break;
 
-		if (s->exit_latency > latency_req) {
-			/*
-			 * If we break out of the loop for latency reasons, use
-			 * the target residency of the selected state as the
-			 * expected idle duration to avoid stopping the tick
-			 * as long as that target residency is low enough.
-			 */
-			duration_us = drv->states[idx].target_residency;
-			goto refine;
-		}
+		if (s->exit_latency > latency_req && constraint_idx > i)
+			constraint_idx = i;
 
 		idx = i;
 
@@ -329,7 +322,13 @@ static int teo_select(struct cpuidle_driver *drv, struct cpuidle_device *dev,
 		duration_us = drv->states[idx].target_residency;
 	}
 
-refine:
+	/*
+	 * If there is a latency constraint, it may be necessary to use a
+	 * shallower idle state than the one selected so far.
+	 */
+	if (constraint_idx < idx)
+		idx = constraint_idx;
+
 	if (idx < 0) {
 		idx = 0; /* No states enabled. Must use 0. */
 	} else if (idx > 0) {
@@ -339,13 +338,12 @@ refine:
 
 		/*
 		 * Count and sum the most recent idle duration values less than
-		 * the target residency of the state selected so far, find the
-		 * max.
+		 * the current expected idle duration value.
 		 */
 		for (i = 0; i < INTERVALS; i++) {
 			unsigned int val = cpu_data->intervals[i];
 
-			if (val >= drv->states[idx].target_residency)
+			if (val >= duration_us)
 				continue;
 
 			count++;
@@ -364,8 +362,10 @@ refine:
 			 * would be too shallow.
 			 */
 			if (!(tick_nohz_tick_stopped() && avg_us < TICK_USEC)) {
-				idx = teo_find_shallower_state(drv, dev, idx, avg_us);
 				duration_us = avg_us;
+				if (drv->states[idx].target_residency > avg_us)
+					idx = teo_find_shallower_state(drv, dev,
+								       idx, avg_us);
 			}
 		}
 	}
