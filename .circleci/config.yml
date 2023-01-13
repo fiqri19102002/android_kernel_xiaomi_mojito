@@ -7,7 +7,7 @@ jobs:
       - run:
           no_output_timeout: 50m
           command: |
-            git clone https://github.com/fiqri19102002/android_kernel_xiaomi_mojito.git -b a11/main --depth=1 mojito
+            git clone https://github.com/fiqri19102002/android_kernel_xiaomi_mojito.git -b move-lse-atomics --depth=1 mojito
             cd mojito
             bash build.sh
 workflows:
