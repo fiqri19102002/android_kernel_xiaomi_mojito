@@ -21,8 +21,8 @@
 #include "sched.h"
 
 #define SUGOV_KTHREAD_PRIORITY	50
-#define UP_RATE_LIMIT_US		(500)
-#define DOWN_RATE_LIMIT_US		(20000)
+#define UP_RATE_LIMIT_US		(20000)
+#define DOWN_RATE_LIMIT_US		(500)
 
 struct sugov_tunables {
 	struct gov_attr_set attr_set;
@@ -178,7 +178,7 @@ static void sugov_update_commit(struct sugov_policy *sg_policy, u64 time,
 	} else {
 		if (use_pelt())
 			sg_policy->work_in_progress = true;
-		irq_work_queue(&sg_policy->irq_work);
+		sched_irq_work_queue(&sg_policy->irq_work);
 	}
 }
 

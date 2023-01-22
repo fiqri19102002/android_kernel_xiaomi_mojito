@@ -73,30 +73,6 @@ static unsigned int get_input_boost_freq(struct cpufreq_policy *policy)
 	return min(freq, policy->max);
 }
 
-static unsigned int get_min_freq(struct cpufreq_policy *policy)
-{
-	unsigned int freq;
-
-	if (cpumask_test_cpu(policy->cpu, cpu_lp_mask))
-		freq = CONFIG_MIN_FREQ_LP;
-	else
-		freq = CONFIG_MIN_FREQ_PERF;
-
-	return max(freq, policy->min);
-}
-
-static unsigned int get_max_boost_freq(struct cpufreq_policy *policy)
-{
-	unsigned int freq;
-
-	if (cpumask_test_cpu(policy->cpu, cpu_lp_mask))
-		freq = CONFIG_MAX_BOOST_FREQ_LP;
-	else
-		freq = CONFIG_MAX_BOOST_FREQ_PERF;
-
-	return min(freq, policy->max);
-}
-
 static void update_online_cpu_policy(void)
 {
 	unsigned int cpu;
@@ -234,7 +210,7 @@ static int cpu_notifier_cb(struct notifier_block *nb, unsigned long action,
 
 	/* Boost CPU to max frequency for max boost */
 	if (test_bit(MAX_BOOST, &b->state)) {
-		policy->min = get_max_boost_freq(policy);
+		policy->min = policy->cpuinfo.max_freq;
 		return NOTIFY_OK;
 	}
 
@@ -245,7 +221,7 @@ static int cpu_notifier_cb(struct notifier_block *nb, unsigned long action,
 	if (test_bit(INPUT_BOOST, &b->state))
 		policy->min = get_input_boost_freq(policy);
 	else
-		policy->min = get_min_freq(policy);
+		policy->min = policy->cpuinfo.min_freq;
 
 	return NOTIFY_OK;
 }
