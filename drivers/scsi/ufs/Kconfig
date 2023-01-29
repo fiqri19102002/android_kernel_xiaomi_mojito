@@ -113,7 +113,7 @@ config SCSI_UFS_TEST
 
 config SCSI_UFSHCD_CMD_LOGGING
 	bool "Universal Flash Storage host controller driver layer command logging support"
-	depends on SCSI_UFSHCD
+	depends on SCSI_UFSHCD && TRACEPOINTS
 	help
 	  This selects the UFS host controller driver layer command logging.
 	  UFS host controller driver layer command logging records all the
