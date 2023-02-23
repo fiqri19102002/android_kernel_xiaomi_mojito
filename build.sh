@@ -51,11 +51,11 @@ if [[ -d "/drone/src" || -d "/root/project" ]]; then
 	echo -e "Detected Continous Integration dir"
 	export LOCALBUILD=0
 	export KBUILD_BUILD_VERSION="1"
+	# Clone telegram script first
+	git clone --depth=1 https://github.com/fabianonline/telegram.sh.git telegram
 	# Set environment for telegram
-	export CHATID="-1001428085807"
-	export token=$TELEGRAM_TOKEN
-	export BOT_MSG_URL="https://api.telegram.org/bot$token/sendMessage"
-	export BOT_BUILD_URL="https://api.telegram.org/bot$token/sendDocument"
+	export TELEGRAM_DIR="$KERNEL_DIR/telegram/telegram"
+	export TELEGRAM_CHAT="-1001428085807"
 else
 	echo -e "Detected local dir"
 	export LOCALBUILD=1
@@ -74,22 +74,18 @@ fi
 
 # Set function for telegram
 tg_post_msg() {
-	curl -s -X POST "$BOT_MSG_URL" -d chat_id="$CHATID" \
-	-d "disable_web_page_preview=true" \
-	-d "parse_mode=html" \
-	-d text="$1"
+	"${TELEGRAM_DIR}" -H -D \
+        "$(
+            for POST in "${@}"; do
+                echo "${POST}"
+            done
+        )"
 }
 
 tg_post_build() {
-	# Post MD5 Checksum alongwith for easeness
-	MD5CHECK=$(md5sum "$1" | cut -d' ' -f1)
-
-	# Show the Checksum alongwith caption
-	curl --progress-bar -F document=@"$1" "$BOT_BUILD_URL" \
-	-F chat_id="$CHATID"  \
-	-F "disable_web_page_preview=true" \
-	-F "parse_mode=html" \
-	-F caption="$2 | <b>MD5 Checksum : </b><code>$MD5CHECK</code>"
+	"${TELEGRAM_DIR}" -H \
+        -f "$1" \
+        "$2"
 }
 
 # Set function for defconfig changes
@@ -152,7 +148,15 @@ set_naming() {
 compile() {
 	echo -e "Kernel compilation starting"
 	if [ $LOCALBUILD == "0" ]; then
-		tg_post_msg "<b>Docker OS: </b><code>$DISTRO</code>%0A<b>Kernel Version : </b><code>$KERVER</code>%0A<b>Date : </b><code>$DATE</code>%0A<b>Device : </b><code>Redmi Note 10 (mojito)</code>%0A<b>Pipeline Host : </b><code>$KBUILD_BUILD_HOST</code>%0A<b>Host Core Count : </b><code>$PROCS</code>%0A<b>Compiler Used : </b><code>$KBUILD_COMPILER_STRING</code>%0a<b>Branch : </b><code>$BRANCH</code>%0A<b>Last Commit : </b><code>$COMMIT_HEAD</code>%0A<b>Status : </b>#Personal"
+		tg_post_msg "<b>Docker OS: </b><code>$DISTRO</code>" \
+		            "<b>Kernel Version : </b><code>$KERVER</code>" \
+		            "<b>Date : </b><code>$DATE</code>" \
+		            "<b>Device : </b><code>Redmi Note 10 (mojito)</code>" \
+		            "<b>Pipeline Host : </b><code>$KBUILD_BUILD_HOST</code>" \
+		            "<b>Host Core Count : </b><code>$PROCS</code>" \
+		            "<b>Compiler Used : </b><code>$KBUILD_COMPILER_STRING</code>" \
+		            "<b>Branch : </b><code>$BRANCH</code>" \
+		            "<b>Last Commit : </b><code>$COMMIT_HEAD</code>"
 	fi
 	make O=out "$DEFCONFIG"
 	BUILD_START=$(date +"%s")
@@ -204,7 +208,7 @@ gen_zip() {
 	ZIP_FINAL="$ZIP_NAME"
 
 	if [ $LOCALBUILD == "0" ]; then
-		tg_post_build "$ZIP_FINAL" "Build took : $((DIFF / 60)) minute(s) and $((DIFF % 60)) second(s)"
+		tg_post_build "$ZIP_FINAL" "<b>Build took : $((DIFF / 60)) minute(s) and $((DIFF % 60)) second(s)</b>"
 	fi
 
 	if ! [[ -d "/home/fiqri" || -d "/drone/src" ]]; then
