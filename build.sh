@@ -56,6 +56,8 @@ if [[ -d "/drone/src" || -d "/root/project" ]]; then
 	# Set environment for telegram
 	export TELEGRAM_DIR="$KERNEL_DIR/telegram/telegram"
 	export TELEGRAM_CHAT="-1001428085807"
+	# Get CPU name
+	export CPU_NAME="$(lscpu | sed -nr '/Model name/ s/.*:\s*(.*) */\1/p')"
 else
 	echo -e "Detected local dir"
 	export LOCALBUILD=1
@@ -153,6 +155,7 @@ compile() {
 		            "<b>Date : </b><code>$DATE</code>" \
 		            "<b>Device : </b><code>Redmi Note 10 (mojito)</code>" \
 		            "<b>Pipeline Host : </b><code>$KBUILD_BUILD_HOST</code>" \
+		            "<b>Host CPU Name : </b><code>$CPU_NAME</code>" \
 		            "<b>Host Core Count : </b><code>$PROCS</code>" \
 		            "<b>Compiler Used : </b><code>$KBUILD_COMPILER_STRING</code>" \
 		            "<b>Branch : </b><code>$BRANCH</code>" \
