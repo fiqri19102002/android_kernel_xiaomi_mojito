@@ -211,7 +211,7 @@ gen_zip() {
 		tg_post_build "$ZIP_FINAL" "<b>Build took : $((DIFF / 60)) minute(s) and $((DIFF % 60)) second(s)</b>"
 	fi
 
-	if ! [[ -d "/home/fiqri" || -d "/drone/src" ]]; then
+	if ! [[ -d "/home/fiqri" || -d "/drone/src" || "/root/project" ]]; then
 		curl -i -T *.zip https://oshi.at
 		curl bashupload.com -T *.zip
 	fi
