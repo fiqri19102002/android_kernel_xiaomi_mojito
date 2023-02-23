@@ -112,6 +112,12 @@ cfg_changes() {
 	fi
 }
 
+# Set function for enable boot clock timestamp buffer
+enable_boot_clock() {	
+	# Enable boot clock timestamp buffer support for MIUI ROMs and MIUI Camera
+	sed -i 's/# CONFIG_MSM_CAMERA_BOOTCLOCK_TIMESTAMP is not set/CONFIG_MSM_CAMERA_BOOTCLOCK_TIMESTAMP=y/g' arch/arm64/configs/vendor/mojito_defconfig
+}
+
 # Set function for cloning repository
 clone() {
 	# Clone AnyKernel3
@@ -141,9 +147,14 @@ clone() {
 }
 
 # Set function for naming zip file
-set_naming() {
-	KERNEL_NAME="STRIX-mojito-personal-$ZIP_DATE"
+set_naming_for_bc() {
+	KERNEL_NAME="STRIX-mojito-bc-personal-$ZIP_DATE"
 	export ZIP_NAME="$KERNEL_NAME.zip"
+}
+
+set_naming_for_smt() {
+	KERNEL_NAME1="STRIX-mojito-smt-personal-$ZIP_DATE"
+	export ZIP_NAME1="$KERNEL_NAME1.zip"
 }
 
 # Set function for starting compile
@@ -191,12 +202,11 @@ compile() {
 }
 
 # Set function for zipping into a flashable zip
-gen_zip() {
-	if [ $LOCALBUILD == "1" ]; then
-		cd AnyKernel3 || exit
-		rm -rf dtb dtbo.img Image *.zip
-		cd ..
-	fi
+gen_zip_for_bc() {
+	# Make sure there are no files like dtb, dtbo.img, Image, and .zip
+	cd AnyKernel3 || exit
+	rm -rf dtb dtbo.img Image *.zip
+	cd ..
 
 	# Move kernel image to AnyKernel3
 	cat "$IMG_DIR"/dts/qcom/sm6150.dtb > AnyKernel3/dtb
@@ -221,8 +231,42 @@ gen_zip() {
 	cd ..
 }
 
+gen_zip_for_smt() {
+	# Make sure there are no files like dtb, dtbo.img, Image, and .zip
+	cd AnyKernel3 || exit
+	rm -rf dtb dtbo.img Image *.zip
+	cd ..
+
+	# Move kernel image to AnyKernel3
+	cat "$IMG_DIR"/dts/qcom/sm6150.dtb > AnyKernel3/dtb
+	mv "$IMG_DIR"/dtbo.img AnyKernel3/dtbo.img
+	mv "$IMG_DIR"/Image AnyKernel3/Image
+	cd AnyKernel3 || exit
+
+	# Archive to flashable zip
+	zip -r9 "$ZIP_NAME1" * -x .git README.md *.zip
+
+	# Prepare a final zip variable
+	ZIP_FINAL1="$ZIP_NAME1"
+
+	if [ $LOCALBUILD == "0" ]; then
+		tg_post_build "$ZIP_FINAL1" "<b>Build took : $((DIFF / 60)) minute(s) and $((DIFF % 60)) second(s)</b>"
+	fi
+
+	if ! [[ -d "/home/fiqri" || -d "/drone/src" || "/root/project" ]]; then
+		curl -i -T *.zip https://oshi.at
+		curl bashupload.com -T *.zip
+	fi
+	cd ..
+}
+
 clone
 cfg_changes
 compile
-set_naming
-gen_zip
+set_naming_for_bc
+gen_zip_for_bc
+enable_boot_clock
+cfg_changes
+compile
+set_naming_for_smt
+gen_zip_for_smt
