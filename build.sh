@@ -51,11 +51,13 @@ if [[ -d "/drone/src" || -d "/root/project" ]]; then
 	echo -e "Detected Continous Integration dir"
 	export LOCALBUILD=0
 	export KBUILD_BUILD_VERSION="1"
+	# Clone telegram script first
+	git clone --depth=1 https://github.com/fabianonline/telegram.sh.git telegram
 	# Set environment for telegram
-	export CHATID="-1001428085807"
-	export token=$TELEGRAM_TOKEN
-	export BOT_MSG_URL="https://api.telegram.org/bot$token/sendMessage"
-	export BOT_BUILD_URL="https://api.telegram.org/bot$token/sendDocument"
+	export TELEGRAM_DIR="$KERNEL_DIR/telegram/telegram"
+	export TELEGRAM_CHAT="-1001428085807"
+	# Get CPU name
+	export CPU_NAME="$(lscpu | sed -nr '/Model name/ s/.*:\s*(.*) */\1/p')"
 else
 	echo -e "Detected local dir"
 	export LOCALBUILD=1
@@ -74,22 +76,18 @@ fi
 
 # Set function for telegram
 tg_post_msg() {
-	curl -s -X POST "$BOT_MSG_URL" -d chat_id="$CHATID" \
-	-d "disable_web_page_preview=true" \
-	-d "parse_mode=html" \
-	-d text="$1"
+	"${TELEGRAM_DIR}" -H -D \
+        "$(
+            for POST in "${@}"; do
+                echo "${POST}"
+            done
+        )"
 }
 
 tg_post_build() {
-	# Post MD5 Checksum alongwith for easeness
-	MD5CHECK=$(md5sum "$1" | cut -d' ' -f1)
-
-	# Show the Checksum alongwith caption
-	curl --progress-bar -F document=@"$1" "$BOT_BUILD_URL" \
-	-F chat_id="$CHATID"  \
-	-F "disable_web_page_preview=true" \
-	-F "parse_mode=html" \
-	-F caption="$2 | <b>MD5 Checksum : </b><code>$MD5CHECK</code>"
+	"${TELEGRAM_DIR}" -H \
+        -f "$1" \
+        "$2"
 }
 
 # Set function for defconfig changes
@@ -112,6 +110,12 @@ cfg_changes() {
 			sed -i 's/CONFIG_LTO_GCC=y/# CONFIG_LTO_GCC is not set/g' arch/arm64/configs/vendor/mojito_defconfig
 		fi
 	fi
+}
+
+# Set function for enable boot clock timestamp buffer
+enable_boot_clock() {	
+	# Enable boot clock timestamp buffer support for MIUI ROMs and MIUI Camera
+	sed -i 's/# CONFIG_MSM_CAMERA_BOOTCLOCK_TIMESTAMP is not set/CONFIG_MSM_CAMERA_BOOTCLOCK_TIMESTAMP=y/g' arch/arm64/configs/vendor/mojito_defconfig
 }
 
 # Set function for cloning repository
@@ -143,16 +147,30 @@ clone() {
 }
 
 # Set function for naming zip file
-set_naming() {
-	KERNEL_NAME="STRIX-mojito-personal-$ZIP_DATE"
+set_naming_for_bc() {
+	KERNEL_NAME="STRIX-mojito-bc-personal-$ZIP_DATE"
 	export ZIP_NAME="$KERNEL_NAME.zip"
+}
+
+set_naming_for_smt() {
+	KERNEL_NAME1="STRIX-mojito-smt-personal-$ZIP_DATE"
+	export ZIP_NAME1="$KERNEL_NAME1.zip"
 }
 
 # Set function for starting compile
 compile() {
 	echo -e "Kernel compilation starting"
 	if [ $LOCALBUILD == "0" ]; then
-		tg_post_msg "<b>Docker OS: </b><code>$DISTRO</code>%0A<b>Kernel Version : </b><code>$KERVER</code>%0A<b>Date : </b><code>$DATE</code>%0A<b>Device : </b><code>Redmi Note 10 (mojito)</code>%0A<b>Pipeline Host : </b><code>$KBUILD_BUILD_HOST</code>%0A<b>Host Core Count : </b><code>$PROCS</code>%0A<b>Compiler Used : </b><code>$KBUILD_COMPILER_STRING</code>%0a<b>Branch : </b><code>$BRANCH</code>%0A<b>Last Commit : </b><code>$COMMIT_HEAD</code>%0A<b>Status : </b>#Personal"
+		tg_post_msg "<b>Docker OS: </b><code>$DISTRO</code>" \
+		            "<b>Kernel Version : </b><code>$KERVER</code>" \
+		            "<b>Date : </b><code>$DATE</code>" \
+		            "<b>Device : </b><code>Redmi Note 10 (mojito)</code>" \
+		            "<b>Pipeline Host : </b><code>$KBUILD_BUILD_HOST</code>" \
+		            "<b>Host CPU Name : </b><code>$CPU_NAME</code>" \
+		            "<b>Host Core Count : </b><code>$PROCS</code>" \
+		            "<b>Compiler Used : </b><code>$KBUILD_COMPILER_STRING</code>" \
+		            "<b>Branch : </b><code>$BRANCH</code>" \
+		            "<b>Last Commit : </b><code>$COMMIT_HEAD</code>"
 	fi
 	make O=out "$DEFCONFIG"
 	BUILD_START=$(date +"%s")
@@ -184,12 +202,11 @@ compile() {
 }
 
 # Set function for zipping into a flashable zip
-gen_zip() {
-	if [ $LOCALBUILD == "1" ]; then
-		cd AnyKernel3 || exit
-		rm -rf dtb dtbo.img Image *.zip
-		cd ..
-	fi
+gen_zip_for_bc() {
+	# Make sure there are no files like dtb, dtbo.img, Image, and .zip
+	cd AnyKernel3 || exit
+	rm -rf dtb dtbo.img Image *.zip
+	cd ..
 
 	# Move kernel image to AnyKernel3
 	cat "$IMG_DIR"/dts/qcom/sm6150.dtb > AnyKernel3/dtb
@@ -204,10 +221,39 @@ gen_zip() {
 	ZIP_FINAL="$ZIP_NAME"
 
 	if [ $LOCALBUILD == "0" ]; then
-		tg_post_build "$ZIP_FINAL" "Build took : $((DIFF / 60)) minute(s) and $((DIFF % 60)) second(s)"
+		tg_post_build "$ZIP_FINAL" "<b>Build took : $((DIFF / 60)) minute(s) and $((DIFF % 60)) second(s)</b>"
 	fi
 
-	if ! [[ -d "/home/fiqri" || -d "/drone/src" ]]; then
+	if ! [[ -d "/home/fiqri" || -d "/drone/src" || "/root/project" ]]; then
+		curl -i -T *.zip https://oshi.at
+		curl bashupload.com -T *.zip
+	fi
+	cd ..
+}
+
+gen_zip_for_smt() {
+	# Make sure there are no files like dtb, dtbo.img, Image, and .zip
+	cd AnyKernel3 || exit
+	rm -rf dtb dtbo.img Image *.zip
+	cd ..
+
+	# Move kernel image to AnyKernel3
+	cat "$IMG_DIR"/dts/qcom/sm6150.dtb > AnyKernel3/dtb
+	mv "$IMG_DIR"/dtbo.img AnyKernel3/dtbo.img
+	mv "$IMG_DIR"/Image AnyKernel3/Image
+	cd AnyKernel3 || exit
+
+	# Archive to flashable zip
+	zip -r9 "$ZIP_NAME1" * -x .git README.md *.zip
+
+	# Prepare a final zip variable
+	ZIP_FINAL1="$ZIP_NAME1"
+
+	if [ $LOCALBUILD == "0" ]; then
+		tg_post_build "$ZIP_FINAL1" "<b>Build took : $((DIFF / 60)) minute(s) and $((DIFF % 60)) second(s)</b>"
+	fi
+
+	if ! [[ -d "/home/fiqri" || -d "/drone/src" || "/root/project" ]]; then
 		curl -i -T *.zip https://oshi.at
 		curl bashupload.com -T *.zip
 	fi
@@ -217,5 +263,10 @@ gen_zip() {
 clone
 cfg_changes
 compile
-set_naming
-gen_zip
+set_naming_for_bc
+gen_zip_for_bc
+enable_boot_clock
+cfg_changes
+compile
+set_naming_for_smt
+gen_zip_for_smt

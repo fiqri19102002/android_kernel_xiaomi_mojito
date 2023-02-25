@@ -69,8 +69,11 @@ void cam_common_util_get_curr_timestamp(struct timeval *time_stamp)
 {
 	struct timespec ts;
 
+#ifdef CONFIG_MSM_CAMERA_BOOTCLOCK_TIMESTAMP
+	ktime_get_ts(&ts);
+#else
 	get_monotonic_boottime(&ts);
+#endif
 	time_stamp->tv_sec    = ts.tv_sec;
 	time_stamp->tv_usec   = ts.tv_nsec/1000;
 }
-
