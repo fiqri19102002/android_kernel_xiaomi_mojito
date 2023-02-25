@@ -177,7 +177,8 @@ compile() {
 	if [ $COMPILER == "clang" ]; then
 		make -j"$PROCS" O=out \
 				CROSS_COMPILE=aarch64-linux-gnu- \
-				LLVM=1
+				LLVM=1 \
+				LLVM_IAS=1
 	elif [ $COMPILER == "gcc" ]; then
 		export CROSS_COMPILE_COMPAT=$GCC32_DIR/bin/arm-eabi-
 		make -j"$PROCS" O=out CROSS_COMPILE=aarch64-elf-
