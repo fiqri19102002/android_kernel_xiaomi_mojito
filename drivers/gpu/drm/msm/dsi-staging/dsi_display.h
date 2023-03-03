@@ -724,4 +724,6 @@ int dsi_display_cmd_engine_disable(struct dsi_display *display);
 int dsi_host_alloc_cmd_tx_buffer(struct dsi_display *display);
 #endif
 
+struct dsi_display *get_main_display(void);
+
 #endif /* _DSI_DISPLAY_H_ */
