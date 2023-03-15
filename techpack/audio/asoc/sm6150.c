@@ -787,7 +787,7 @@ static int aw87559_mode_get(struct snd_kcontrol *kcontrol,
 
 	current_mode = aw87xxx_show_current_mode(0);
 	ucontrol->value.integer.value[0] = current_mode;
-	pr_info("%s: get mode:%d\n", __func__, current_mode);
+	pr_debug("%s: get mode:%d\n", __func__, current_mode);
 
 	return 0;
 }
@@ -800,7 +800,7 @@ static int aw87559_mode_set(struct snd_kcontrol *kcontrol,
 	if (pcard)
 		pcard->aw87xxx_spk_mode = set_mode;
 
-	pr_info("%s: set mode:%d success", __func__, set_mode);
+	pr_debug("%s: set mode:%d success", __func__, set_mode);
 	return 0;
 }
 static int aw87389_mode_get(struct snd_kcontrol *kcontrol,
@@ -810,7 +810,7 @@ static int aw87389_mode_get(struct snd_kcontrol *kcontrol,
 
 	current_mode = aw87xxx_show_current_mode(1);
 	ucontrol->value.integer.value[0] = current_mode;
-	pr_info("%s: get mode:%d\n", __func__, current_mode);
+	pr_debug("%s: get mode:%d\n", __func__, current_mode);
 
 	return 0;
 }
@@ -823,7 +823,7 @@ static int aw87389_mode_set(struct snd_kcontrol *kcontrol,
 	if (pcard)
 		pcard->aw87xxx_rcv_mode = set_mode;
 
-	pr_info("%s: set mode:%d success", __func__, set_mode);
+	pr_debug("%s: set mode:%d success", __func__, set_mode);
 	return 0;
 }
 #endif
