@@ -1735,14 +1735,14 @@ static int qg_get_battery_capacity(struct qpnp_qg *chip, int *soc)
 		rc = qg_get_battery_current(chip, &ibat);
 		if ((rc >= 0) && (((ibat <= -10000) && (*soc < pre_soc)) || 
 		   ((ibat > -10000) && (*soc > pre_soc) && (*soc <= pre_soc + 8)))) {
-			pr_err("lct rc=%d,ibat=%d,pre_soc=%d,*soc=%d\n", rc,ibat,pre_soc,*soc);
+			pr_debug("lct rc=%d,ibat=%d,pre_soc=%d,*soc=%d\n", rc,ibat,pre_soc,*soc);
 			*soc = pre_soc;
 		}
 
 		if (soc_adjust_time_flag) {
 			*soc = pre_soc;
 			soc_count ++;
-			pr_err("lct soc_adjust_time_flag=%d,soc_count=%d\n",soc_adjust_time_flag,soc_count);
+			pr_debug("lct soc_adjust_time_flag=%d,soc_count=%d\n",soc_adjust_time_flag,soc_count);
 		}
 
 		if (soc_count >= 50) {
@@ -1792,7 +1792,7 @@ static int qg_get_battery_capacity(struct qpnp_qg *chip, int *soc)
 				soc_adjust_time_flag = false;
 				soc_count = 0;
 			}
-			pr_err("lct1 rc=%d,ibat=%d,pre_soc=%d,*soc=%d\n", rc,ibat,pre_soc,*soc);
+			pr_debug("lct1 rc=%d,ibat=%d,pre_soc=%d,*soc=%d\n", rc,ibat,pre_soc,*soc);
 		} else {
 			pre_soc = *soc;
 			ibat_count = 0;
