@@ -2249,17 +2249,25 @@ long _do_fork(unsigned long clone_flags,
 	struct task_struct *p;
 	int trace = 0;
 	long nr;
-	unsigned int period;
-
-	period = (kp_active_mode() == 2) ? 50 : (kp_active_mode() == 3) ? 75 : 50;
 
 	/*
 	 * Boost DDR bus and CPU to the max when userspace 
 	 * launches an app according to set kernel profile.
 	 */
 	if (task_is_zygote(current)) {
-		cpu_input_boost_kick_max(period);
-		devfreq_boost_kick_max(DEVFREQ_CPU_LLCC_DDR_BW, period);
+		switch (kp_active_mode()) {
+		case 0:
+		case 2:
+			cpu_input_boost_kick_max(50);
+			devfreq_boost_kick_max(DEVFREQ_CPU_LLCC_DDR_BW, 50);
+			break;
+		case 3:
+			cpu_input_boost_kick_max(75);
+			devfreq_boost_kick_max(DEVFREQ_CPU_LLCC_DDR_BW, 75);
+			break;
+		default:
+			break;
+		}
 	}
 
 	/*
