@@ -148,12 +148,12 @@ clone() {
 
 # Set function for naming zip file
 set_naming_for_bc() {
-	KERNEL_NAME="STRIX-mojito-bc-personal-$ZIP_DATE"
+	KERNEL_NAME="STRIX-mojito-bc-lmk-personal-$ZIP_DATE"
 	export ZIP_NAME="$KERNEL_NAME.zip"
 }
 
 set_naming_for_smt() {
-	KERNEL_NAME1="STRIX-mojito-smt-personal-$ZIP_DATE"
+	KERNEL_NAME1="STRIX-mojito-smt-lmk-personal-$ZIP_DATE"
 	export ZIP_NAME1="$KERNEL_NAME1.zip"
 }
 
