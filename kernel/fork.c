@@ -2231,7 +2231,9 @@ struct task_struct *fork_idle(int cpu)
 	return task;
 }
 
+#ifdef CONFIG_KPROFILES
 extern int kp_active_mode(void);
+#endif
 
 /*
  *  Ok, this is the main fork-routine.
@@ -2250,11 +2252,12 @@ long _do_fork(unsigned long clone_flags,
 	int trace = 0;
 	long nr;
 
-	/*
-	 * Boost DDR bus and CPU to the max when userspace 
-	 * launches an app according to set kernel profile.
-	 */
 	if (task_is_zygote(current)) {
+#ifdef CONFIG_KPROFILES
+		/*
+	 	 * Boost DDR bus and CPU to the max when userspace 
+	 	 * launches an app according to set kernel profile.
+	 	 */
 		switch (kp_active_mode()) {
 		case 0:
 		case 2:
@@ -2268,6 +2271,11 @@ long _do_fork(unsigned long clone_flags,
 		default:
 			break;
 		}
+#else
+		/* Boost DDR bus to the max for 50 ms when userspace launches an app */
+		cpu_input_boost_kick_max(50);
+		devfreq_boost_kick_max(DEVFREQ_CPU_LLCC_DDR_BW, 50);
+#endif
 	}
 
 	/*
