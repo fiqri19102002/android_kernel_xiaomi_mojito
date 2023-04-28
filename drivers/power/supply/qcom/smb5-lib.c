@@ -5338,11 +5338,11 @@ int smblib_set_prop_pd_active(struct smb_charger *chg,
 #ifdef CONFIG_MACH_XIAOMI_MOJITO
 	if (!chg->pd) {
 		chg->pd = devm_usbpd_get_by_phandle(chg->dev, "qcom,usbpd-phandle");
-		pr_err("1:chg->pd=%x\n", chg->pd);
+		pr_debug("1:chg->pd=%x\n", chg->pd);
 		if (IS_ERR_OR_NULL(chg->pd))
 			pr_err("Failed to get pd handle %ld\n", PTR_ERR(chg->pd));	
 	}
-	pr_err("2:chg->pd=%x\n", chg->pd);
+	pr_debug("2:chg->pd=%x\n", chg->pd);
 #endif
 	update_sw_icl_max(chg, apsd->pst);
 

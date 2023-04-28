@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -543,11 +544,13 @@ static QDF_STATUS nan_handle_confirm(
 	peer = wlan_objmgr_get_peer_by_mac(psoc,
 					   confirm->peer_ndi_mac_addr.bytes,
 					   WLAN_NAN_ID);
-	if (!peer) {
+	if (!peer && confirm->rsp_code == NAN_DATAPATH_RESPONSE_ACCEPT) {
 		nan_debug("Drop NDP confirm as peer isn't available");
 		return QDF_STATUS_E_NULL_VALUE;
 	}
-	wlan_objmgr_peer_release_ref(peer, WLAN_NAN_ID);
+
+	if (peer)
+		wlan_objmgr_peer_release_ref(peer, WLAN_NAN_ID);
 
 	psoc_nan_obj = nan_get_psoc_priv_obj(psoc);
 	if (!psoc_nan_obj) {
@@ -1277,13 +1280,13 @@ static QDF_STATUS nan_discovery_generic_req(struct nan_generic_req *req)
 	return tx_ops->nan_discovery_req_tx(req, NAN_GENERIC_REQ);
 }
 
-void nan_discovery_flush_callback(struct scheduler_msg *msg)
+QDF_STATUS nan_discovery_flush_callback(struct scheduler_msg *msg)
 {
 	struct wlan_objmgr_psoc *psoc;
 
 	if (!msg || !msg->bodyptr) {
 		nan_err("Null pointer for NAN Discovery message");
-		return;
+		return QDF_STATUS_E_INVAL;
 	}
 
 	switch (msg->type) {
@@ -1299,11 +1302,13 @@ void nan_discovery_flush_callback(struct scheduler_msg *msg)
 	default:
 		nan_err("Unsupported request type: %d", msg->type);
 		qdf_mem_free(msg->bodyptr);
-		return;
+		return QDF_STATUS_E_INVAL;
 	}
 
 	wlan_objmgr_psoc_release_ref(psoc, WLAN_NAN_ID);
 	qdf_mem_free(msg->bodyptr);
+
+	return QDF_STATUS_SUCCESS;
 }
 
 QDF_STATUS nan_discovery_scheduled_handler(struct scheduler_msg *msg)

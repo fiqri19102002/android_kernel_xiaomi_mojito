@@ -1826,7 +1826,7 @@ int aw87xxx_rcv_pa(int enable, int mode)
 	else
 		set_mode = mode;
 
-	pr_info("%s: aw87xxx_rcv_mode %d\n", __func__, set_mode);
+	pr_debug("%s: aw87xxx_rcv_mode %d\n", __func__, set_mode);
 
 	ret = aw87xxx_audio_scene_load(set_mode, 1);
 	if (ret < 0) {
@@ -1846,7 +1846,7 @@ int aw87xxx_spk_pa(int enable, int mode)
 	else
 		set_mode = mode;
 
-	pr_info("%s: aw87xxx_spk_mode %d\n", __func__, set_mode);
+	pr_debug("%s: aw87xxx_spk_mode %d\n", __func__, set_mode);
 
 	ret = aw87xxx_audio_scene_load(set_mode, 0);
 	if (ret < 0) {
