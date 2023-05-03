@@ -55,7 +55,7 @@ if [[ -d "/drone/src" || -d "/root/project" ]]; then
 	git clone --depth=1 https://github.com/fabianonline/telegram.sh.git telegram
 	# Set environment for telegram
 	export TELEGRAM_DIR="$KERNEL_DIR/telegram/telegram"
-	export TELEGRAM_CHAT="-1001428085807"
+	export TELEGRAM_CHAT=""
 	# Get CPU name
 	export CPU_NAME="$(lscpu | sed -nr '/Model name/ s/.*:\s*(.*) */\1/p')"
 else
