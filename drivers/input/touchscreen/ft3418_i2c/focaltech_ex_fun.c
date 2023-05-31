@@ -575,10 +575,10 @@ static ssize_t fts_irq_store(
     mutex_lock(&input_dev->mutex);
     if (FTS_SYSFS_ECHO_ON(buf)) {
         FTS_INFO("enable irq");
-        fts_irq_enable();
+        fts_irq_setup(true);
     } else if (FTS_SYSFS_ECHO_OFF(buf)) {
         FTS_INFO("disable irq");
-        fts_irq_disable();
+        fts_irq_setup(false);
     }
     mutex_unlock(&input_dev->mutex);
     return count;

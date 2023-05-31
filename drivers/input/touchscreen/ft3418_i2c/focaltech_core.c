@@ -147,33 +147,17 @@ int fts_reset_proc(int hdelayms)
     return 0;
 }
 
-void fts_irq_disable(void)
-{
-    unsigned long irqflags;
-
-    FTS_FUNC_ENTER();
-    spin_lock_irqsave(&fts_data->irq_lock, irqflags);
-
-    if (!fts_data->irq_disabled) {
-        disable_irq_nosync(fts_data->irq);
-        fts_data->irq_disabled = true;
-    }
-
-    spin_unlock_irqrestore(&fts_data->irq_lock, irqflags);
-    FTS_FUNC_EXIT();
-}
-
-void fts_irq_enable(void)
+void fts_irq_setup(bool enable)
 {
     unsigned long irqflags = 0;
 
     FTS_FUNC_ENTER();
     spin_lock_irqsave(&fts_data->irq_lock, irqflags);
 
-    if (fts_data->irq_disabled) {
+    if (enable)
         enable_irq(fts_data->irq);
-        fts_data->irq_disabled = false;
-    }
+    else
+        disable_irq_nosync(fts_data->irq);
 
     spin_unlock_irqrestore(&fts_data->irq_lock, irqflags);
     FTS_FUNC_EXIT();
@@ -1580,7 +1564,7 @@ static int fts_ts_suspend(struct device *dev)
             }
         fts_gesture_suspend(ts_data);
         } else {
-        fts_irq_disable();
+        fts_irq_setup(false);
 
         FTS_INFO("make TP enter into sleep mode");
         ret = fts_write_reg(FTS_REG_POWER_MODE, FTS_REG_POWER_MODE_SLEEP);
@@ -1634,7 +1618,7 @@ static int fts_ts_resume(struct device *dev)
     if (ts_data->gesture_mode) {
         fts_gesture_resume(ts_data);
     } else {
-        fts_irq_enable();
+        fts_irq_setup(true);
     }
 
     ts_data->suspended = false;

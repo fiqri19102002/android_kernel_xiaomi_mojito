@@ -195,7 +195,6 @@ struct fts_ts_data {
 #endif
     bool suspended;
     bool fw_loading;
-    bool irq_disabled;
     bool power_disabled;
     bool glove_mode;
     bool cover_mode;
@@ -309,6 +308,5 @@ int fts_ex_mode_init(struct fts_ts_data *ts_data);
 int fts_ex_mode_exit(struct fts_ts_data *ts_data);
 int fts_ex_mode_recovery(struct fts_ts_data *ts_data);
 int fts_flash_read(u32 addr, u8 *buf, u32 len);
-void fts_irq_disable(void);
-void fts_irq_enable(void);
+void fts_irq_setup(bool enable);
 #endif /* __LINUX_FOCALTECH_CORE_H__ */
