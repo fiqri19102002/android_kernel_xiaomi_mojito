@@ -63,6 +63,12 @@ else
 	export LOCALBUILD=1
 fi
 
+# Setup and apply patch KernelSU in root dir
+if ! [ -d "$KERNEL_DIR"/KernelSU ]; then
+	curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
+	git apply KernelSU-hook.patch
+fi
+
 # Check for CI
 if [ $LOCALBUILD == "0" ]; then
 	if [ -d "/drone/src" ]; then
