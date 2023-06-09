@@ -939,7 +939,6 @@ struct rndis_params *rndis_register(void (*resp_avail)(void *v), void *v,
 	}
 #endif
 
-	spin_lock_init(&params->resp_lock);
 	params->confignr = i;
 	params->used = 1;
 	params->state = RNDIS_UNINITIALIZED;
