@@ -66,7 +66,9 @@ fi
 # Setup and apply patch KernelSU in root dir
 if ! [ -d "$KERNEL_DIR"/KernelSU ]; then
 	curl -kLSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s main
-	git apply KernelSU-hook.patch
+	if [ -d "$KERNEL_DIR"/KernelSU ]; then
+		git apply KernelSU-hook.patch
+	fi
 fi
 
 # Check for CI
