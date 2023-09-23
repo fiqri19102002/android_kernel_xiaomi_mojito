@@ -139,7 +139,7 @@ static int ea_panel_notifier_callback(struct notifier_block *self,
 	struct msm_drm_notifier *evdata = data;
 	unsigned int blank;
 
-	if (event != MSM_DRM_EVENT_BLANK)
+	if (event != MSM_DRM_EVENT_BLANK || !pcc_backlight_enable)
 		return 0;
 
 	if (evdata && evdata->data) {
