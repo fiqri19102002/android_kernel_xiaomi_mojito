@@ -20,6 +20,8 @@
 #include <linux/device.h>
 #include <linux/platform_device.h>
 #include <linux/notifier.h>
+#include <linux/module.h>
+#include <linux/msm_drm_notify.h>
 
 #include "dsi_display.h"
 #include "dsi_panel.h"
@@ -28,6 +30,7 @@
 #include "exposure_adjustment.h"
 
 static bool pcc_backlight_enable = false;
+static bool screen_on = true;
 static u32 last_level = ELVSS_OFF_THRESHOLD;
 
 static int ea_panel_send_pcc(u32 bl_lvl)
@@ -124,3 +127,65 @@ u32 ea_panel_calc_backlight(u32 bl_lvl)
 		return bl_lvl;
 	}
 }
+
+bool ea_panel_screen_on(void)
+{
+	return screen_on;
+}
+
+static int ea_panel_notifier_callback(struct notifier_block *self, 
+					unsigned long event, void *data)
+{
+	struct msm_drm_notifier *evdata = data;
+	unsigned int blank;
+
+	if (event != MSM_DRM_EVENT_BLANK)
+		return 0;
+
+	if (evdata && evdata->data) {
+		blank = *(int *)(evdata->data);
+		switch (blank) {
+		case MSM_DRM_BLANK_POWERDOWN:
+			if (!screen_on)
+				break;
+			screen_on = false;
+			break;
+		case MSM_DRM_BLANK_UNBLANK:
+			if (screen_on)
+				break;
+			screen_on = true;
+			break;
+		default:
+			break;
+		}
+	}
+
+	return NOTIFY_OK;
+}
+
+static struct notifier_block ea_panel_notifier = {
+	.notifier_call = ea_panel_notifier_callback,
+};
+
+static int __init ea_panel_init(void)
+{
+
+	int ret = 0;
+
+	// Register the driver module as a client of the MSM DRM event notifier
+	ret = msm_drm_register_client(&ea_panel_notifier);
+
+	if (ret)
+		pr_err("Failed to register notifier, err: %d\n", ret);
+
+	return ret;
+}
+
+static void __exit ea_panel_exit(void)
+{
+	// Unregister the driver module as a client of the MSM DRM event notifier
+	msm_drm_unregister_client(&ea_panel_notifier);
+}
+
+module_init(ea_panel_init);
+module_exit(ea_panel_exit);
