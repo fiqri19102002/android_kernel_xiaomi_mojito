@@ -27,9 +27,7 @@
 #include "dsi_display.h"
 #endif
 
-#ifdef CONFIG_EXPOSURE_ADJUSTMENT
 #include "exposure_adjustment.h"
-#endif
 
 /**
  * topology is currently defined by a set of following 3 values:
@@ -795,10 +793,8 @@ int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl)
 
 	pr_debug("backlight type:%d lvl:%d\n", bl->type, bl_lvl);
 
-#ifdef CONFIG_EXPOSURE_ADJUSTMENT
         if (bl_lvl > 0)
                 bl_lvl = ea_panel_calc_backlight(bl_lvl < bl_dc_min ? bl_dc_min : bl_lvl);
-#endif
 
 	switch (bl->type) {
 	case DSI_BACKLIGHT_WLED:
@@ -3697,11 +3693,14 @@ void dsi_panel_put(struct dsi_panel *panel)
 }
 
 #ifdef CONFIG_EXPOSURE_ADJUSTMENT
-static struct dsi_panel * set_panel;
+static struct dsi_panel *set_panel;
 static ssize_t mdss_fb_set_ea_enable(struct device *dev,
 	struct device_attribute *attr, const char *buf, size_t len)
 {
 	u32 anti_flicker;
+
+	if (!ea_panel_screen_on())
+		return len;
 
 	if (sscanf(buf, "%d", &anti_flicker) != 1) {
 		pr_err("sccanf buf error!\n");
