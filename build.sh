@@ -140,7 +140,7 @@ clone() {
 		tar -xf arm-gnu-toolchain-13.2.rel1-x86_64-aarch64-none-elf.tar.xz
 		tar -xf arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar.xz
 		# Set environment for clang and GCC
-		CLANG_DIR=$KERNEL_DIR/clang/clang-r498229b
+		CLANG_DIR=$KERNEL_DIR/clang/clang-r510928
 		GCC64_DIR=$KERNEL_DIR/arm-gnu-toolchain-13.2.rel1-x86_64-aarch64-none-elf
 		GCC32_DIR=$KERNEL_DIR/arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi
 		# Get path and compiler string
