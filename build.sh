@@ -132,20 +132,13 @@ clone() {
 	git clone --depth=1 https://github.com/fiqri19102002/AnyKernel3.git -b mojito
 
 	if [ $COMPILER == "clang" ]; then
-		# Clone Google clang and GCC compiler from ARM Developer
-		git clone https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 --depth=1 clang
-		wget "https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-x86_64-aarch64-none-elf.tar.xz?rev=a05df3001fa34105838e6fba79ee1b23&hash=D63F63D13F01626D207019956E7122B5" -O arm-gnu-toolchain-13.2.rel1-x86_64-aarch64-none-elf.tar.xz
-		wget "https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar.xz?rev=e434b9ea4afc4ed7998329566b764309&hash=CA590209F5774EE1C96E6450E14A3E26" -O arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar.xz
-		# Extract GCC Compiler
-		tar -xf arm-gnu-toolchain-13.2.rel1-x86_64-aarch64-none-elf.tar.xz
-		tar -xf arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar.xz
-		# Set environment for clang and GCC
-		CLANG_DIR=$KERNEL_DIR/clang/clang-r510928
-		GCC64_DIR=$KERNEL_DIR/arm-gnu-toolchain-13.2.rel1-x86_64-aarch64-none-elf
-		GCC32_DIR=$KERNEL_DIR/arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi
+		# Clone Proton clang
+		git clone --depth=1 https://gitlab.com/fiqri19102002/proton_clang-mirror.git clang
+		# Set environment for clang
+		TC_DIR=$KERNEL_DIR/clang
 		# Get path and compiler string
-		KBUILD_COMPILER_STRING=$("$CLANG_DIR"/bin/clang --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
-		PATH=$CLANG_DIR/bin/:$PATH
+		KBUILD_COMPILER_STRING=$("$TC_DIR"/bin/clang --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
+		PATH=$TC_DIR/bin/:$PATH
 	elif [ $COMPILER == "gcc" ]; then
 		# Clone GCC ARM64 and ARM32
 		git clone https://github.com/fiqri19102002/aarch64-gcc.git -b release/elf-12 --depth=1 gcc64
@@ -191,8 +184,7 @@ compile() {
 	BUILD_START=$(date +"%s")
 	if [ $COMPILER == "clang" ]; then
 		make -j"$PROCS" O=out \
-				CROSS_COMPILE="$GCC64_DIR/bin/aarch64-none-elf-" \
-				CROSS_COMPILE_COMPAT="$GCC32_DIR/bin/arm-none-eabi-" \
+				CROSS_COMPILE=aarch64-linux-gnu- \
 				LLVM=1 \
 				LLVM_IAS=1
 	elif [ $COMPILER == "gcc" ]; then
